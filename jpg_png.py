@@ -94,7 +94,21 @@ def calculate_tone(image):
     
 #     return depth.squeeze().numpy().mean()
 
-
+def estimate_depth(image):
+    midas = load_midas_model()
+    input_batch = preprocess_midas(image)
+    
+    with torch.no_grad():
+        prediction = midas(input_batch)
+        prediction = nn.functional.interpolate(
+            prediction.unsqueeze(1),
+            size=image.size[::-1],
+            mode="bicubic",
+            align_corners=False,
+        ).squeeze()
+    
+    depth_map = prediction.cpu().numpy()
+    return depth_map
 
 #%%
 # Function to calculate clarity

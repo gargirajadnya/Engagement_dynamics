@@ -83,8 +83,9 @@ def calculate_tone(image):
 # Function to estimate depth 
 def load_midas_model():
     midas = torch.hub.load("intel-isl/MiDaS", "MiDaS")
-    midas.eval('cpu')
+    midas.eval()
     return midas
+
 
 # Function to preprocess the image for MiDaS model
 def preprocess_midas(image):
@@ -112,7 +113,7 @@ def estimate_depth(image):
             align_corners=False,
         ).squeeze()
     
-    depth_map = prediction.cpu().numpy()
+    depth_map = prediction.cpu().numpy().mean()
     return depth_map
 
 # def estimate_depth(image):
@@ -271,7 +272,7 @@ for idx, row in sampled_images_df.iterrows():
             'depth': depth,
             'clarity': clarity,
             'mean_rgb': mean_rgb,
-            'median_rgb': median_rgb,
+            #'median_rgb': median_rgb,
             'dominant_colors': dominant_colors,
             'hue': hue,
             'saturation': saturation,
@@ -295,3 +296,17 @@ final_df = pd.merge(sampled_images_df, results_df, on='image_num')
 final_df.head()
 
 #%%
+
+#separate the bracket cols into individual cols
+def split_rgb_list(df, col_name):
+    # Split the RGB values into separate columns
+    df[[f'{col_name}_r', f'{col_name}_g', f'{col_name}_b']] = pd.DataFrame(df[col_name].tolist(), index=df.index)
+    return df
+
+# Apply function to split mean_rgb column
+df = split_rgb_list(final_df, 'mean_rgb')
+
+df.head()
+# %%
+
+# %%

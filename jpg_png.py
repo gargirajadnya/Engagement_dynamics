@@ -15,6 +15,9 @@ from torchvision.models.detection import fasterrcnn_resnet50_fpn
 # from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input, decode_predictions
 # from tensorflow.keras.preprocessing import image
 import cv2
+from collections import Counter
+
+
 
 from sklearn.cluster import KMeans
 
@@ -24,7 +27,6 @@ sampled_images_df = pd.read_csv('sampl_food.csv')
 sampled_images_df.head()
 
 #%%
-
 # Function to download an image from a URL
 def download_image(url):
     try:
@@ -79,20 +81,23 @@ def calculate_tone(image):
 
 #%%
 # Function to estimate depth 
-# def estimate_depth(image):
-#     # Load MiDaS model
-#     model = torch.hub.load("intel-isl/MiDaS", "MiDaS_small")
-#     transform = torch.hub.load("intel-isl/MiDaS", "transforms").default_transform
-#     model.eval()
-    
-#     # Convert image to torch.Tensor and apply transformations
-#     img_tensor = transform(T.ToPILImage()(image)).unsqueeze(0)
-    
-#     # Compute depth
-#     with torch.no_grad():
-#         depth = model(img_tensor)
-    
-#     return depth.squeeze().numpy().mean()
+def load_midas_model():
+    midas = torch.hub.load("intel-isl/MiDaS", "MiDaS")
+    midas.eval('cpu')
+    return midas
+
+# Function to preprocess the image for MiDaS model
+def preprocess_midas(image):
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Resize((384, 384)),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    image = np.array(image)
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    input_batch = transform(image).unsqueeze(0)
+    return input_batch
 
 def estimate_depth(image):
     midas = load_midas_model()
@@ -109,6 +114,22 @@ def estimate_depth(image):
     
     depth_map = prediction.cpu().numpy()
     return depth_map
+
+# def estimate_depth(image):
+#     # Load MiDaS model
+#     model = torch.hub.load("intel-isl/MiDaS", "MiDaS_small")
+#     transform = torch.hub.load("intel-isl/MiDaS", "transforms").default_transform
+#     model.eval()
+    
+#     # Convert image to torch.Tensor and apply transformations
+#     img_tensor = transform(T.ToPILImage()(image)).unsqueeze(0)
+    
+#     # Compute depth
+#     with torch.no_grad():
+#         depth = model(img_tensor)
+    
+#     return depth.squeeze().numpy().mean()
+
 
 #%%
 # Function to calculate clarity
@@ -136,6 +157,7 @@ def detect_garnishing(image):
     
     return garnishing_count
 
+#%%
 # Placeholder function for portion size estimation
 def estimate_portion_size(image):
     model = fasterrcnn_resnet50_fpn(pretrained=True)
@@ -153,6 +175,63 @@ def estimate_portion_size(image):
         main_object_area = 0
     
     return portion_size.item()
+
+
+#%%
+# Function to extract RGB values and calculate statistics
+def extract_rgb_values(image):
+    image_np = np.array(image)
+    pixels = image_np.reshape((-1, 3))  # Reshape to a list of pixels
+    
+    # Calculate mean RGB values
+    mean_rgb = np.mean(pixels, axis=0)
+    
+    # Calculate median RGB values
+    median_rgb = np.median(pixels, axis=0)
+
+    # Calculate HSV values
+    image_hsv = cv2.cvtColor(image_np, cv2.COLOR_RGB2HSV)
+    hue = image_hsv[:,:,0]
+    saturation = image_hsv[:,:,1]
+    brightness = image_hsv[:,:,2]
+    
+    hue = np.mean(hue)
+    saturation = np.mean(saturation)
+    brightness = np.mean(brightness)
+    
+    # median_hue = np.median(hue)
+    # median_saturation = np.median(saturation)
+    # median_brightness = np.median(brightness)
+    
+    #return mean_rgb, median_rgb, mean_hue, median_hue, mean_saturation, median_saturation, mean_brightness, median_brightness
+
+    
+    # Use KMeans to find the dominant colors
+    num_clusters = 5
+    clt = KMeans(n_clusters=num_clusters)
+    clt.fit(pixels)
+    
+    # Count the number of pixels assigned to each cluster
+    counts = Counter(clt.labels_)
+    
+    # Get the dominant colors (sorted by frequency)
+    dominant_colors = [clt.cluster_centers_[i] for i in counts.keys()]
+    
+    # Sort by frequency
+    dominant_colors = sorted(dominant_colors, key=lambda x: counts[clt.predict([x])[0]], reverse=True)
+    
+    return mean_rgb, median_rgb, dominant_colors, hue, saturation, brightness
+
+#%%
+# Calculate HSV values
+# def extract_hsv_values(image):
+#     image_hsv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2HSV)
+    
+#     hue = image_hsv[:, :, 0].flatten()
+#     saturation = image_hsv[:, :, 1].flatten()
+#     brightness = image_hsv[:, :, 2].flatten()
+    
+#     return hue, saturation, brightness
 
 #%%
 # List to store the results as dictionaries
@@ -174,6 +253,11 @@ for idx, row in sampled_images_df.iterrows():
         portion_size = estimate_portion_size(image)
         depth = estimate_depth(image)
         clarity = calculate_clarity(image)
+        #hue, saturation, brightness = extract_hsv_values(image)
+       
+        
+        # Extract RGB values
+        mean_rgb, median_rgb, dominant_colors, hue, saturation, brightness = extract_rgb_values(image)
         
         # Append results as dictionary to results_list
         results_list.append({
@@ -185,7 +269,13 @@ for idx, row in sampled_images_df.iterrows():
             'garnishing': garnishing,
             'portion_size': portion_size,
             'depth': depth,
-            'clarity': clarity
+            'clarity': clarity,
+            'mean_rgb': mean_rgb,
+            'median_rgb': median_rgb,
+            'dominant_colors': dominant_colors,
+            'hue': hue,
+            'saturation': saturation,
+            'brightness': brightness
         })
     else:
         print(f"Skipping image {image_num} due to download error.")

@@ -1,31 +1,30 @@
 #%%
 
 #%%
+
+#basic
 import pandas as pd
 import numpy as np
+import pandas as pd
+import numpy as np
+
+#comp vision and AI
 import requests
 from io import BytesIO
 from PIL import Image
 import os
-import pandas as pd
-import numpy as np
 import torch
 import torchvision.transforms as T
 from torchvision import transforms
 import torch.nn as nn
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
-# from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input, decode_predictions
-# from tensorflow.keras.preprocessing import image
 import cv2
 from collections import Counter
-
-
-
 from sklearn.cluster import KMeans
 
 #%%
 # Load your DataFrame
-sampled_images_df = pd.read_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/sampl_food.csv')
+sampled_images_df = pd.read_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/clean_data.csv')
 sampled_images_df.head()
 
 #%%
@@ -47,7 +46,7 @@ def calculate_sharpness(image):
     variance_of_laplacian = cv2.Laplacian(gray, cv2.CV_64F).var()
     return variance_of_laplacian
 
-#%%
+#
 # Function to calculate colorfulness
 def calculate_colorfulness(image):
     image = np.array(image)
@@ -61,7 +60,7 @@ def calculate_colorfulness(image):
     colorfulness = std_rg + std_yb + 0.3 * (mean_rg + mean_yb)
     return colorfulness
 
-#%%
+#
 # Function to calculate the no. of colors
 def calculate_number_of_colors(image, k=5):
     image = np.array(image)
@@ -70,7 +69,7 @@ def calculate_number_of_colors(image, k=5):
     clt.fit(image)
     return len(clt.cluster_centers_)
 
-#%%
+#
 # Function to calculate tone
 def calculate_tone(image):
     image_hsv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2HSV)
@@ -81,7 +80,7 @@ def calculate_tone(image):
     else:
         return "Warm"
 
-#%%
+#
 # Function to estimate depth 
 def load_midas_model():
     midas = torch.hub.load("intel-isl/MiDaS", "MiDaS")
@@ -118,7 +117,7 @@ def estimate_depth(image):
     depth_map = prediction.cpu().numpy().mean()
     return depth_map
 
-#%%
+#
 # Function to calculate clarity
 def calculate_clarity(image):
     image = np.array(image)
@@ -127,7 +126,7 @@ def calculate_clarity(image):
     clarity_score = np.var(sharpness_map)
     return clarity_score
 
-#%%
+#
 # Placeholder function for garnishing detection (using pre-trained object detection model)
 def detect_garnishing(image):
     model = fasterrcnn_resnet50_fpn(pretrained=True)
@@ -144,7 +143,7 @@ def detect_garnishing(image):
     
     return garnishing_count
 
-#%%
+#
 # Placeholder function for portion size estimation
 def estimate_portion_size(image):
     model = fasterrcnn_resnet50_fpn(pretrained=True)
@@ -164,7 +163,7 @@ def estimate_portion_size(image):
     return portion_size.item()
 
 
-#%%
+#
 # Function to extract RGB values and calculate statistics
 def extract_rgb_values(image):
     image_np = np.array(image)
@@ -209,7 +208,7 @@ def extract_rgb_values(image):
     
     return mean_rgb, median_rgb, dominant_colors, hue, saturation, brightness
 
-#%%
+#
 # Function to evaluate Rule of Thirds
 def evaluate_rule_of_thirds(image):
     height, width, _ = image.shape
@@ -277,9 +276,13 @@ results_list = []
 
 # Process each image
 for idx, row in sampled_images_df.iterrows():
-    image_num = row['commentsCount']
-    image_tag = row['caption']
-    image_url = row['image_url']
+    image_node = row['node_shortcode']
+    image_com = row['node_edge_media_to_comment_count']
+    image_likes = row['node_edge_liked_by_count']
+    image_caption = row['node_edge_media_to_caption_edges_0_node_text']
+    image_dim_h = row['node_dimensions_height']
+    image_dim_w = row['node_dimensions_width']
+    image_url = row['node_display_url']
     
     image = download_image(image_url)
     if image:
@@ -308,7 +311,7 @@ for idx, row in sampled_images_df.iterrows():
         
         # Append results as dictionary to results_list
         results_list.append({
-            'image_num': image_num,
+            'image_node': image_node,
             'sharpness': sharpness,
             'colorfulness': colorfulness,
             'number_of_colors': number_of_colors,
@@ -334,14 +337,15 @@ for idx, row in sampled_images_df.iterrows():
             'center_score': center_score
         })
     else:
-        print(f"Skipping image {image_num} due to download error.")
+        print(f"Skipping image {image_node} due to download error.")
 
 #%%
 # Convert results_list to DataFrame
 results_df = pd.DataFrame(results_list)
 
 # Merge the results with the original dataset
-final_df = pd.merge(sampled_images_df, results_df, on='image_num')
+final_df = pd.merge(sampled_images_df, results_df, left_on='node_shortcode', right_on='image_node')
+
 
 # Save the final DataFrame to a new CSV file
 # final_df.to_csv('food_images_analysis_with_original.csv', index=False)

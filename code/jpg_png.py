@@ -21,6 +21,7 @@ from torchvision.models.detection import fasterrcnn_resnet50_fpn
 import cv2
 from collections import Counter
 from sklearn.cluster import KMeans
+import langid
 
 #%%
 # Load your DataFrame
@@ -37,6 +38,17 @@ def download_image(url):
     except requests.exceptions.RequestException as e:
         print(f"Failed to download {url}: {e}")
         return None
+
+
+#%%
+# Function to detect the language
+def detect_language(text):
+    try:
+        lang, _ = langid.classify(text)
+        return lang
+    except Exception:
+        return 'na'
+
 
 #%%
 # Function to calculate sharpness
@@ -276,13 +288,9 @@ results_list = []
 
 # Process each image
 for idx, row in sampled_images_df.iterrows():
-    image_node = row['node_shortcode']
-    image_com = row['node_edge_media_to_comment_count']
-    image_likes = row['node_edge_liked_by_count']
-    image_caption = row['node_edge_media_to_caption_edges_0_node_text']
-    image_dim_h = row['node_dimensions_height']
-    image_dim_w = row['node_dimensions_width']
-    image_url = row['node_display_url']
+    image_node = row['shortcode']
+    caption = row['caption']
+    image_url = row['display_url']
     
     image = download_image(image_url)
     if image:
@@ -309,6 +317,9 @@ for idx, row in sampled_images_df.iterrows():
         # Extract RGB values
         mean_rgb, median_rgb, dominant_colors, hue, saturation, brightness = extract_rgb_values(image)
         
+        # Detect the language of the caption
+        caption_lang = detect_language(caption)
+
         # Append results as dictionary to results_list
         results_list.append({
             'image_node': image_node,
@@ -334,7 +345,8 @@ for idx, row in sampled_images_df.iterrows():
             'lines_diagonal': diagonal,
             'pattern_score': pattern_score,
             'triangle_count': triangle_count,
-            'center_score': center_score
+            'center_score': center_score,
+            'caption_lang': caption_lang
         })
     else:
         print(f"Skipping image {image_node} due to download error.")

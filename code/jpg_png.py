@@ -11,6 +11,8 @@ import pandas as pd
 import numpy as np
 import torch
 import torchvision.transforms as T
+from torchvision import transforms
+import torch.nn as nn
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
 # from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input, decode_predictions
 # from tensorflow.keras.preprocessing import image
@@ -23,7 +25,7 @@ from sklearn.cluster import KMeans
 
 #%%
 # Load your DataFrame
-sampled_images_df = pd.read_csv('sampl_food.csv')
+sampled_images_df = pd.read_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/sampl_food.csv')
 sampled_images_df.head()
 
 #%%
@@ -115,22 +117,6 @@ def estimate_depth(image):
     
     depth_map = prediction.cpu().numpy().mean()
     return depth_map
-
-# def estimate_depth(image):
-#     # Load MiDaS model
-#     model = torch.hub.load("intel-isl/MiDaS", "MiDaS_small")
-#     transform = torch.hub.load("intel-isl/MiDaS", "transforms").default_transform
-#     model.eval()
-    
-#     # Convert image to torch.Tensor and apply transformations
-#     img_tensor = transform(T.ToPILImage()(image)).unsqueeze(0)
-    
-#     # Compute depth
-#     with torch.no_grad():
-#         depth = model(img_tensor)
-    
-#     return depth.squeeze().numpy().mean()
-
 
 #%%
 # Function to calculate clarity
@@ -224,15 +210,66 @@ def extract_rgb_values(image):
     return mean_rgb, median_rgb, dominant_colors, hue, saturation, brightness
 
 #%%
-# Calculate HSV values
-# def extract_hsv_values(image):
-#     image_hsv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2HSV)
-    
-#     hue = image_hsv[:, :, 0].flatten()
-#     saturation = image_hsv[:, :, 1].flatten()
-#     brightness = image_hsv[:, :, 2].flatten()
-    
-#     return hue, saturation, brightness
+# Function to evaluate Rule of Thirds
+def evaluate_rule_of_thirds(image):
+    height, width, _ = image.shape
+    thirds_y = height // 3
+    thirds_x = width // 3
+    return thirds_x, thirds_y
+
+# Function to evaluate symmetry
+def evaluate_symmetry(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    flipped = cv2.flip(gray, 1)
+    difference = cv2.absdiff(gray, flipped)
+    score = np.sum(difference)
+    return score
+
+# Function to evaluate lines (horizontal, vertical, diagonal)
+def evaluate_lines(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+    lines = cv2.HoughLines(edges, 1, np.pi / 180, 200)
+    horizontal, vertical, diagonal = 0, 0, 0
+    if lines is not None:
+        for rho, theta in lines[:, 0]:
+            angle = np.degrees(theta)
+            if angle < 10 or angle > 170:
+                vertical += 1
+            elif 80 < angle < 100:
+                horizontal += 1
+            else:
+                diagonal += 1
+    return horizontal, vertical, diagonal
+
+# Function to evaluate patterns
+def evaluate_patterns(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    corners = cv2.goodFeaturesToTrack(gray, 100, 0.01, 10)
+    if corners is not None:
+        return len(corners)
+    return 0
+
+# Function to evaluate triangles
+def evaluate_triangles(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+    contours, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    triangles = 0
+    for contour in contours:
+        approx = cv2.approxPolyDP(contour, 0.04 * cv2.arcLength(contour, True), True)
+        if len(approx) == 3:
+            triangles += 1
+    return triangles
+
+# Function to evaluate center composition
+def evaluate_center_composition(image):
+    height, width, _ = image.shape
+    center_x, center_y = width // 2, height // 2
+    radius = min(width, height) // 10
+    center_region = image[center_y - radius:center_y + radius, center_x - radius:center_x + radius]
+    return np.mean(center_region)
+
 
 #%%
 # List to store the results as dictionaries
@@ -240,8 +277,8 @@ results_list = []
 
 # Process each image
 for idx, row in sampled_images_df.iterrows():
-    image_num = row['image_num']
-    image_tag = row['image_tag']
+    image_num = row['commentsCount']
+    image_tag = row['caption']
     image_url = row['image_url']
     
     image = download_image(image_url)
@@ -255,7 +292,16 @@ for idx, row in sampled_images_df.iterrows():
         depth = estimate_depth(image)
         clarity = calculate_clarity(image)
         #hue, saturation, brightness = extract_hsv_values(image)
-       
+        #Convert PIL image to OpenCV format for composition evaluation
+        image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+
+        thirds_x, thirds_y = evaluate_rule_of_thirds(image_cv)
+        symmetry_score = evaluate_symmetry(image_cv)
+        horizontal, vertical, diagonal = evaluate_lines(image_cv)
+        pattern_score = evaluate_patterns(image_cv)
+        triangle_count = evaluate_triangles(image_cv)
+        center_score = evaluate_center_composition(image_cv)
+        
         
         # Extract RGB values
         mean_rgb, median_rgb, dominant_colors, hue, saturation, brightness = extract_rgb_values(image)
@@ -276,7 +322,16 @@ for idx, row in sampled_images_df.iterrows():
             'dominant_colors': dominant_colors,
             'hue': hue,
             'saturation': saturation,
-            'brightness': brightness
+            'brightness': brightness,
+            'rule_of_thirds_x': thirds_x,
+            'rule_of_thirds_y': thirds_y,
+            'symmetry_score': symmetry_score,
+            'lines_horizontal': horizontal,
+            'lines_vertical': vertical,
+            'lines_diagonal': diagonal,
+            'pattern_score': pattern_score,
+            'triangle_count': triangle_count,
+            'center_score': center_score
         })
     else:
         print(f"Skipping image {image_num} due to download error.")
@@ -308,5 +363,6 @@ df = split_rgb_list(final_df, 'mean_rgb')
 
 df.head()
 # %%
+#df.to_csv('food_images_analysis_with_original.csv', index=False)
 
 # %%

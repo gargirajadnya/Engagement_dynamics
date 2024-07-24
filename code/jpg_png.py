@@ -369,4 +369,3 @@ df.head()
 # %%
 #df.to_csv('food_images_analysis_with_original.csv', index=False)
 
-# %%

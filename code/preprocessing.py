@@ -19,6 +19,7 @@ import string
 sampled_images_df = pd.read_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/raw_response_1.csv')
 sampled_images_df.head()
 
+
 #%%
 
 def prep_colnames(my_df):

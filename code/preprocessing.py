@@ -77,6 +77,8 @@ sampled_images_df['cleaned_text'] = sampled_images_df['node_edge_media_to_captio
 sampled_images_df.head()
 
 # %%
-sampled_images_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/clean_data.csv', index=False)
+# sampled_images_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/clean_data.csv', index=False)
 
 # %%
+
+

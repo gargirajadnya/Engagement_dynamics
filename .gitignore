@@ -15,3 +15,6 @@
 /sampled_images.csv
 /sampled_images.xlsx
 /updated_sampl_food.csv
+*.csv
+*.xlsx
+*.pdf

@@ -25,7 +25,7 @@ import langid
 
 #%%
 # Load your DataFrame
-sampled_images_df = pd.read_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/code/clean_data.csv')
+sampled_images_df = pd.read_csv('clean_data.csv')
 sampled_images_df.head()
 
 #%%
@@ -157,6 +157,7 @@ def detect_garnishing(image):
 
 #
 # Placeholder function for portion size estimation
+
 def estimate_portion_size(image):
     model = fasterrcnn_resnet50_fpn(pretrained=True)
     model.eval()
@@ -171,8 +172,7 @@ def estimate_portion_size(image):
         main_object_area = max([(box[2] - box[0]) * (box[3] - box[1]) for box in predictions[0]['boxes']])
         portion_size = main_object_area / (image.width * image.height)
     
-    return portion_size
-
+    return portion_size.item()
 
 #
 # Function to extract RGB values and calculate statistics

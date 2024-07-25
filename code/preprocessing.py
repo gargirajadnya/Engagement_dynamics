@@ -19,8 +19,8 @@ from datetime import datetime
 #%%
 directory_path = '/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data'
 
-def sort_key(raw):
-    return int(raw.split('_')[1].split('.')[0])
+def sort_key(raw_response):
+    return int(raw_response.split('-')[1].split('.')[0])
 
 # Get a list of all CSV files in the directory and sort them using the custom key
 csv_files = sorted([file for file in os.listdir(directory_path) if file.endswith('.csv')], key=sort_key)
@@ -139,7 +139,7 @@ final_df.shape
 final_df.head(10)
 
 # %%
-sampled_images_df.to_csv('sampled_images_df.csv', index=False)
+final_df.to_csv('clean_data.csv', index=False)
 
 # %%
 

@@ -25,7 +25,7 @@ import langid
 
 #%%
 # Load your DataFrame
-sampled_images_df = pd.read_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/clean_data.csv')
+sampled_images_df = pd.read_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/code/clean_data.csv')
 sampled_images_df.head()
 
 #%%
@@ -166,13 +166,12 @@ def estimate_portion_size(image):
     with torch.no_grad():
         predictions = model([image_tensor])
     
+    portion_size = 0  # Initialize with a default value
     if len(predictions[0]['boxes']) > 0:
         main_object_area = max([(box[2] - box[0]) * (box[3] - box[1]) for box in predictions[0]['boxes']])
         portion_size = main_object_area / (image.width * image.height)
-    else:
-        main_object_area = 0
     
-    return portion_size.item()
+    return portion_size
 
 
 #
@@ -299,7 +298,6 @@ for idx, row in sampled_images_df.iterrows():
         number_of_colors = calculate_number_of_colors(image)
         tone = calculate_tone(image)
         garnishing = detect_garnishing(image)
-        portion_size = estimate_portion_size(image)
         depth = estimate_depth(image)
         clarity = calculate_clarity(image)
         #hue, saturation, brightness = extract_hsv_values(image)
@@ -312,7 +310,7 @@ for idx, row in sampled_images_df.iterrows():
         pattern_score = evaluate_patterns(image_cv)
         triangle_count = evaluate_triangles(image_cv)
         center_score = evaluate_center_composition(image_cv)
-        
+        portion_size = estimate_portion_size(image)
         
         # Extract RGB values
         mean_rgb, median_rgb, dominant_colors, hue, saturation, brightness = extract_rgb_values(image)
@@ -356,18 +354,13 @@ for idx, row in sampled_images_df.iterrows():
 results_df = pd.DataFrame(results_list)
 
 # Merge the results with the original dataset
-final_df = pd.merge(sampled_images_df, results_df, left_on='node_shortcode', right_on='image_node')
-
-
-# Save the final DataFrame to a new CSV file
-# final_df.to_csv('food_images_analysis_with_original.csv', index=False)
-# print("Analysis complete. Results saved to 'food_images_analysis_with_original.csv'.")
+final_df = pd.merge(sampled_images_df, results_df, left_on='shortcode', right_on='image_node')
+final_df.drop(columns=['image_node'], inplace=True)
 
 # %%
 final_df.head()
 
 #%%
-
 #separate the bracket cols into individual cols
 def split_rgb_list(df, col_name):
     # Split the RGB values into separate columns
@@ -379,5 +372,9 @@ df = split_rgb_list(final_df, 'mean_rgb')
 
 df.head()
 # %%
-#df.to_csv('food_images_analysis_with_original.csv', index=False)
+df.to_csv('final_data.csv', index=False)
 
+
+#%%
+
+#%%

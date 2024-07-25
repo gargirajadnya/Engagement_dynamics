@@ -14,6 +14,7 @@ import re
 import string
 import os
 import langid
+from datetime import datetime
 
 #%%
 directory_path = '/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data'
@@ -111,14 +112,15 @@ rename_dict = {
     'node_edge_media_to_comment_count':'comment_count',
     'node_dimensions_height':'dim_h',
     'node_dimensions_width':'dim_w',
-    'node_display_url':'display_url'
+    'node_display_url':'display_url',
+    'node_taken_at_timestamp':'timestamp'
 }
 sampled_images_df.rename(columns=rename_dict, inplace=True)
 
 
 #%%
 # select required columns
-selected_columns = ['shortcode', 'like_count', 'comment_count', 'dim_h', 'dim_w', 'hashtags', 'caption', 'cap_lang', 'display_url']
+selected_columns = ['shortcode', 'timestamp', 'like_count', 'comment_count', 'dim_h', 'dim_w', 'hashtags', 'caption', 'cap_lang', 'display_url']
 
 # new DataFrame with the selected columns
 new_df = sampled_images_df[selected_columns]
@@ -128,13 +130,16 @@ new_df.shape
 
 #drop duplicates
 final_df = new_df.drop_duplicates(subset='shortcode')
+# Convert timestamp to datetime
+final_df.loc[:, 'timestamp'] = final_df['timestamp'].apply(lambda x: datetime.utcfromtimestamp(x).strftime('%Y-%m-%d %H:%M:%S'))
+
 final_df.shape
 
 #%%
 final_df.head(10)
 
 # %%
-final_df.to_csv('clean_data.csv', index=False)
+sampled_images_df.to_csv('sampled_images_df.csv', index=False)
 
 # %%
 

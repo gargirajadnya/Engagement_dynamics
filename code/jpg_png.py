@@ -156,25 +156,6 @@ def detect_garnishing(image):
     return garnishing_count
 
 #
-# Placeholder function for portion size estimation
-
-def estimate_portion_size(image):
-    model = fasterrcnn_resnet50_fpn(pretrained=True)
-    model.eval()
-    
-    transform = T.Compose([T.ToTensor()])
-    image_tensor = transform(image)
-    with torch.no_grad():
-        predictions = model([image_tensor])
-    
-    portion_size = 0  # Initialize with a default value
-    if len(predictions[0]['boxes']) > 0:
-        main_object_area = max([(box[2] - box[0]) * (box[3] - box[1]) for box in predictions[0]['boxes']])
-        portion_size = main_object_area / (image.width * image.height)
-    
-    return portion_size.item()
-
-#
 # Function to extract RGB values and calculate statistics
 def extract_rgb_values(image):
     image_np = np.array(image)
@@ -310,7 +291,6 @@ for idx, row in sampled_images_df.iterrows():
         pattern_score = evaluate_patterns(image_cv)
         triangle_count = evaluate_triangles(image_cv)
         center_score = evaluate_center_composition(image_cv)
-        portion_size = estimate_portion_size(image)
         
         # Extract RGB values
         mean_rgb, median_rgb, dominant_colors, hue, saturation, brightness = extract_rgb_values(image)
@@ -326,7 +306,6 @@ for idx, row in sampled_images_df.iterrows():
             'number_of_colors': number_of_colors,
             'tone': tone,
             'garnishing': garnishing,
-            'portion_size': portion_size,
             'depth': depth,
             'clarity': clarity,
             'mean_rgb': mean_rgb,

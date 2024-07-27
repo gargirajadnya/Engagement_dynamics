@@ -17,7 +17,7 @@ import langid
 from datetime import datetime
 
 #%%
-directory_path = '/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data'
+directory_path = '/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/raw_data'
 
 def sort_key(raw_response):
     return int(raw_response.split('-')[1].split('.')[0])
@@ -139,7 +139,7 @@ final_df.shape
 final_df.head(10)
 
 # %%
-final_df.to_csv('clean_data.csv', index=False)
+final_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/clean_data.csv', index=False)
 
 # %%
 

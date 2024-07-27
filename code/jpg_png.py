@@ -5,8 +5,6 @@
 #basic
 import pandas as pd
 import numpy as np
-import pandas as pd
-import numpy as np
 
 #comp vision and AI
 import requests
@@ -25,7 +23,7 @@ import langid
 
 #%%
 # Load your DataFrame
-sampled_images_df = pd.read_csv('clean_data.csv')
+sampled_images_df = pd.read_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/clean_data.csv')
 sampled_images_df.head()
 
 #%%
@@ -351,7 +349,7 @@ df = split_rgb_list(final_df, 'mean_rgb')
 
 df.head()
 # %%
-df.to_csv('final_data.csv', index=False)
+df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/final_data.csv', index=False)
 
 
 #%%

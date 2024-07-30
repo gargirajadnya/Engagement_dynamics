@@ -43,7 +43,7 @@ df['timestamp'] = pd.to_datetime(df['timestamp'])
 prior_alpha = 2  # Prior alpha parameter for Beta distribution
 prior_beta = 5   # Prior beta parameter for Beta distribution
 
-current_time = pd.to_datetime('2024-07-25 12:00:00')
+current_time = pd.to_datetime('2024-07-25 19:13:00')
 
 # Calculate time since post in hours
 df['time_since_post'] = (current_time - df['timestamp']).dt.total_seconds() / 3600

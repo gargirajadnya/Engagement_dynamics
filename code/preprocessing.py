@@ -94,6 +94,7 @@ sampled_images_df.head()
 # Apply the function to the 'text' column and create a new column with the extracted hashtags
 sampled_images_df['hashtags'] = sampled_images_df['node_edge_media_to_caption_edges_0_node_text'].apply(extract_hashtags)
 sampled_images_df['caption'] = sampled_images_df['node_edge_media_to_caption_edges_0_node_text'].apply(clean_text)
+sampled_images_df['hashtags'] = sampled_images_df['hashtags'].apply(clean_text)
 
 sampled_images_df['hashtags'] = sampled_images_df['hashtags'].replace('', 'NA')
 sampled_images_df['caption'] = sampled_images_df['caption'].replace('', 'NA')

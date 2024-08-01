@@ -37,6 +37,7 @@ def download_image(url):
         print(f"Failed to download {url}: {e}")
         return None
 
+image = download_image(image_url)
 
 #%%
 # Function to detect the language
@@ -266,17 +267,18 @@ results_list = []
 
 # Process each image
 for idx, row in sampled_images_df.iterrows():
-    image_node = row['shortcode']
+    shortcode = row['shortcode']
     caption = row['caption']
     image_url = row['display_url']
     
     image = download_image(image_url)
     if image:
+        print(f"Processing image {shortcode}")
         sharpness = calculate_sharpness(image)
         colorfulness = calculate_colorfulness(image)
         number_of_colors = calculate_number_of_colors(image)
         tone = calculate_tone(image)
-        garnishing = detect_garnishing(image)
+        # garnishing = detect_garnishing(image)
         depth = estimate_depth(image)
         clarity = calculate_clarity(image)
         #hue, saturation, brightness = extract_hsv_values(image)
@@ -298,12 +300,12 @@ for idx, row in sampled_images_df.iterrows():
 
         # Append results as dictionary to results_list
         results_list.append({
-            'image_node': image_node,
+            'shortcode': shortcode,
             'sharpness': sharpness,
             'colorfulness': colorfulness,
             'number_of_colors': number_of_colors,
             'tone': tone,
-            'garnishing': garnishing,
+            # 'garnishing': garnishing,
             'depth': depth,
             'clarity': clarity,
             'mean_rgb': mean_rgb,
@@ -324,15 +326,14 @@ for idx, row in sampled_images_df.iterrows():
             'caption_lang': caption_lang
         })
     else:
-        print(f"Skipping image {image_node} due to download error.")
+        print(f"Skipping image {shortcode} due to download error.")
 
 #%%
 # Convert results_list to DataFrame
 results_df = pd.DataFrame(results_list)
 
 # Merge the results with the original dataset
-final_df = pd.merge(sampled_images_df, results_df, left_on='shortcode', right_on='image_node')
-final_df.drop(columns=['image_node'], inplace=True)
+final_df = pd.merge(sampled_images_df, results_df, on='shortcode')
 
 # %%
 final_df.head()
@@ -347,9 +348,14 @@ def split_rgb_list(df, col_name):
 # Apply function to split mean_rgb column
 df = split_rgb_list(final_df, 'mean_rgb')
 
+# Convert the 'tone' column to binary
+df['tone'] = df['tone'].map({'Cool': 1, 'Warm': 0})
+
+
 df.head()
+
 # %%
-df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/final_data.csv', index=False)
+df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/im_aesth.csv', index=False)
 
 
 #%%

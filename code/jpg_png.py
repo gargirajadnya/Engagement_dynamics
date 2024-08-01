@@ -37,7 +37,7 @@ def download_image(url):
         print(f"Failed to download {url}: {e}")
         return None
 
-image = download_image(image_url)
+# image = download_image(image_url)
 
 #%%
 # Function to detect the language
@@ -182,22 +182,7 @@ def extract_rgb_values(image):
     
     #return mean_rgb, median_rgb, mean_hue, median_hue, mean_saturation, median_saturation, mean_brightness, median_brightness
 
-    
-    # Use KMeans to find the dominant colors
-    num_clusters = 5
-    clt = KMeans(n_clusters=num_clusters)
-    clt.fit(pixels)
-    
-    # Count the number of pixels assigned to each cluster
-    counts = Counter(clt.labels_)
-    
-    # Get the dominant colors (sorted by frequency)
-    dominant_colors = [clt.cluster_centers_[i] for i in counts.keys()]
-    
-    # Sort by frequency
-    dominant_colors = sorted(dominant_colors, key=lambda x: counts[clt.predict([x])[0]], reverse=True)
-    
-    return mean_rgb, median_rgb, dominant_colors, hue, saturation, brightness
+
 
 #
 # Function to evaluate Rule of Thirds

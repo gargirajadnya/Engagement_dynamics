@@ -28,6 +28,8 @@ food_df.head()
 missing_values = food_df.isnull().sum()
 print(missing_values)
 
+#%%
+#unique values in some particular cols
 
 #%%
 #new variables

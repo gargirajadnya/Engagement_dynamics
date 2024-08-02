@@ -116,14 +116,16 @@ for col in col_int:
         })
 
 # Convert the results list to a DataFrame
-results_df = pd.DataFrame(results)
-results_df
+ttest_df = pd.DataFrame(results)
+ttest_df
+
+food_df.drop(columns=['group'], inplace=True)
 
 #%%
 #feature engineering
 #color names- one hot encoding
 # Select the specified columns
-selected_df = food_df[['shortcode'] + col_int + ['caption_lang', 'color_names']]
+selected_df = food_df.copy()
 
 # One-hot encode 'caption_lang' using 1 and 0
 caption_lang_encoded = pd.get_dummies(selected_df['caption_lang'], prefix='lang').astype(int)
@@ -150,13 +152,13 @@ for i, colors in enumerate(top_colors_exploded):
             color_one_hot.loc[i, color] = 1
 
 # Concatenate the one-hot encoded columns with the selected DataFrame
-result_df = pd.concat([selected_df, caption_lang_encoded, color_one_hot], axis=1).drop(['caption_lang', 'color_names'], axis=1)
+result_df = pd.concat([selected_df, caption_lang_encoded, color_one_hot], axis=1).drop(['caption_lang', 'color_names', 'dominant_colors'], axis=1)
 
 # Display the first few rows of the resulting DataFrame
 result_df.head()
 
 #%%
 #save data in csv
-food_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/model_data.csv', index=False)
+result_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/model_data.csv', index=False)
 
 # %%

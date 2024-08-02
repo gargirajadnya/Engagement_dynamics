@@ -44,9 +44,9 @@ food_df['log_symmetry_score'] = np.log1p(food_df['symmetry_score'])
 
 # %%
 # Select specific columns for correlation, if needed
-# col_int = ['sharpness', 'colorfulness', 'depth', 'clarity', 'hue', 'saturation', 'brightness', 'rule_of_thirds_x', 'rule_of_thirds_y', 'symmetry_score', 'tone','lines_horizontal', 'lines_vertical', 'lines_diagonal', 'triangle_count', 'center_score', 'mean_rgb_r', 'mean_rgb_g', 'mean_rgb_b', 'brns_satrn_interaction', 'depth_clarity_interaction', 'log_symmetry_score'] 
+col_int = ['sharpness', 'colorfulness', 'depth', 'clarity', 'hue', 'saturation', 'brightness', 'rule_of_thirds_x', 'rule_of_thirds_y', 'symmetry_score', 'tone','lines_horizontal', 'lines_vertical', 'lines_diagonal', 'triangle_count', 'center_score', 'mean_rgb_r', 'mean_rgb_g', 'mean_rgb_b', 'brns_satrn_interaction', 'depth_clarity_interaction', 'log_symmetry_score'] 
 
-col_int =  ['colorfulness', 'depth', 'clarity', 'hue', 'saturation', 'brightness', 'rule_of_thirds_x', 'rule_of_thirds_y', 'symmetry_score',  'lines_vertical', 'center_score', 'tone', 'brns_satrn_interaction', 'depth_clarity_interaction', 'log_symmetry_score'] 
+# col_int =  ['colorfulness', 'depth', 'clarity', 'hue', 'saturation', 'brightness', 'rule_of_thirds_x', 'rule_of_thirds_y', 'symmetry_score',  'lines_vertical', 'center_score', 'tone', 'brns_satrn_interaction', 'depth_clarity_interaction', 'log_symmetry_score'] 
 
 correlation_matrix = food_df[col_int].corr()
 
@@ -61,7 +61,7 @@ plt.show()
 
 # %%
 #columns to select after checking correlation
-sel_num_col = ['sharpness', 'colorfulness', 'depth', 'clarity', 'hue', 'saturation', 'brightness', 'rule_of_thirds_x', 'rule_of_thirds_y', 'symmetry_score', 'tone', 'lines_horizontal', 'lines_vertical', 'lines_diagonal', 'triangle_count', 'center_score', 'mean_rgb_r', 'mean_rgb_g', 'mean_rgb_b'] 
+sel_num_col = ['sharpness', 'colorfulness', 'depth', 'clarity', 'hue', 'saturation', 'brightness', 'rule_of_thirds_x', 'rule_of_thirds_y', 'symmetry_score', 'tone', 'lines_horizontal', 'lines_vertical', 'lines_diagonal', 'triangle_count', 'center_score', 'mean_rgb_r', 'mean_rgb_g', 'mean_rgb_b','brns_satrn_interaction', 'depth_clarity_interaction', 'log_symmetry_score'] 
 
 
 #%%

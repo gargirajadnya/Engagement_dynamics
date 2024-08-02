@@ -14,6 +14,9 @@ from sklearn.preprocessing import StandardScaler
 #splitting data
 from sklearn.model_selection import train_test_split
 
+#SVM
+from sklearn.svm import SVR
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 #NEURAL NETWORK
 import tensorflow as tf
@@ -34,7 +37,9 @@ food_df.head()
 
 #!!!!!!!!SHALL WE REMOVE MEANRGB COLS????!!!!!!!!!!
 
-X = food_df.drop(columns=['eng_met', 'shortcode', 'timestamp', 'display_url', 'tone_cat', 'dominant_colors', 'caption_lang', 'color_names', 'hashtags', 'garnishing','like_count', 'comment_count', 'group', 'followers', 'pattern_score','lines_horizontal',  'lines_diagonal', 'triangle_count'])
+X = food_df.drop(columns=['eng_met', 'shortcode', 'timestamp', 'display_url', 'tone_cat', 'hashtags', 'garnishing','like_count', 'comment_count', 'followers', 'pattern_score'
+                        #   ,'lines_horizontal',  'lines_diagonal', 'triangle_count'
+                          ])
 
 
 y = food_df['eng_met']
@@ -96,5 +101,20 @@ print("y_test shape:", y_test.shape)
 
 # %%
 
+# Create and train the SVR model
+svr_model = SVR(kernel='rbf', C=100, gamma='scale', epsilon=0.1)
+svr_model.fit(X_train, y_train)
+
+# Make predictions on the test set
+y_pred = svr_model.predict(X_test)
+
+# Evaluate the model
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+mae = mean_absolute_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+
+print('SVR RMSE:', rmse)
+print('SVR MAE:', mae)
+print('SVR R-squared:', r2)
 
 #%%

@@ -155,29 +155,8 @@ result_df = pd.concat([selected_df, caption_lang_encoded, color_one_hot], axis=1
 # Display the first few rows of the resulting DataFrame
 result_df.head()
 
-
-
 #%%
-#standardizing numerical columns
-# Data preprocessing pipeline
-# Define features and target, drop categorical features
-X = food_df.drop(columns=['eng_met', 'shortcode', 'timestamp', 'display_url', 'tone_cat', 'dominant_colors', 'caption_lang', 'color_names'])
-y = food_df['eng_met']
+#save data in csv
+food_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/model_data.csv', index=False)
 
-# Identify numerical features
-numerical_features = X.select_dtypes(include=[np.number]).columns.tolist()
-
-print("Numerical Features:", numerical_features)
-
-numeric_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='mean')),
-    ('scaler', StandardScaler())
-])
-
-preprocessor = ColumnTransformer(
-    transformers=[
-        ('num', numeric_transformer, sel_num_col)
-    ])
-
-
-#%%
+# %%

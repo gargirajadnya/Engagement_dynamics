@@ -15,6 +15,13 @@ import string
 import os
 import langid
 from datetime import datetime
+#color names
+import webcolors
+from colormath.color_objects import sRGBColor, LabColor
+from colormath.color_conversions import convert_color
+from colormath.color_diff import delta_e_cie2000
+import re
+import ast
 
 #comp vision and AI
 import requests
@@ -174,6 +181,64 @@ sampled_images_df.shape
 sampled_images_df = sampled_images_df[sampled_images_df['followers'] != 999]
 sampled_images_df.shape
 
+# %%
+#--------------------------------------------------------------------------------------------------------------------------------
+#%%
+#preprocess the dominant_colors column to get color names
+def replace_array_string(s):
+    return s.replace('array', 'np.array')
+
+# Apply the function to the 'dominant_colors' column
+sampled_images_df['dominant_colors'] = sampled_images_df['dominant_colors'].apply(replace_array_string)
+
+# Use the updated parse function
+def parse_array_string(array_string):
+    array_string = array_string.replace('np.array(', '').replace(')', '')
+    try:
+        array_list = ast.literal_eval(array_string)
+        return np.array(array_list)
+    except (SyntaxError, ValueError) as e:
+        print(f"Error parsing string: {array_string} -> {e}")
+        return np.array([])
+
+sampled_images_df['dominant_colors'] = sampled_images_df['dominant_colors'].apply(parse_array_string)
+
+#%%
+#color names
+def closest_color(requested_color):
+    min_colors = {}
+    for key, name in webcolors.CSS3_HEX_TO_NAMES.items():
+        r_c, g_c, b_c = webcolors.hex_to_rgb(key)
+        rd = (r_c - requested_color[0]) ** 2
+        gd = (g_c - requested_color[1]) ** 2
+        bd = (b_c - requested_color[2]) ** 2
+        min_colors[(rd + gd + bd)] = name
+    return min_colors[min(min_colors.keys())]
+
+def get_color_name(rgb_tuple):
+    try:
+        # Convert RGB to hex
+        hex_value = webcolors.rgb_to_hex(rgb_tuple)
+        # Get the color name directly
+        return webcolors.hex_to_name(hex_value)
+    except ValueError:
+        # If exact match not found, find the closest color
+        return closest_color(rgb_tuple)
+
+def get_color_names_from_rgb_list(rgb_list):
+    color_names = []
+    for rgb in rgb_list:
+        # Convert numpy array to tuple if necessary
+        if isinstance(rgb, np.ndarray):
+            rgb = tuple(rgb.astype(int))  # Convert to tuple and ensure integer values
+        color_names.append(get_color_name(rgb))
+    return color_names
+
+
+#%%
+sampled_images_df['color_names'] = sampled_images_df['dominant_colors'].apply(get_color_names_from_rgb_list)
+
+#%%
 new_df = sampled_images_df.copy()
 
 #%%
@@ -188,7 +253,7 @@ sampled_images_df.shape
 sampled_images_df.head(10)
 
 # %%
-sampled_images_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/clean_data.csv', index=False)
+# sampled_images_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/clean_data.csv', index=False)
 
 # %%
 #--------------------------------------------------------------------------------------------------------------------------------
@@ -217,6 +282,7 @@ def detect_language(text):
 
 
 #%%
+#FUNCTIONS
 # Function to calculate sharpness
 def calculate_sharpness(image):
     image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
@@ -349,8 +415,6 @@ def extract_rgb_values(image):
     
     #return mean_rgb, median_rgb, mean_hue, median_hue, mean_saturation, median_saturation, mean_brightness, median_brightness
 
-
-
 #
 # Function to evaluate Rule of Thirds
 def evaluate_rule_of_thirds(image):
@@ -414,6 +478,7 @@ def evaluate_center_composition(image):
 
 
 #%%
+#CALLING FUNCTIONS
 # List to store the results as dictionaries
 results_list = []
 
@@ -505,7 +570,7 @@ df['tone'] = df['tone'].map({'Cool': 1, 'Warm': 0})
 df.head()
 
 # %%
-df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/im_aesth.csv', index=False)
+# df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/im_aesth.csv', index=False)
 
 
 #%%
@@ -538,8 +603,7 @@ df = df.drop(columns=['time_since_post', 'exp_growth'])
 df.head()
 
 # %%
-
-df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/eng_met.csv', index=False)
-
+#saving as csv
+# df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/eng_met.csv', index=False)
 
 #%%

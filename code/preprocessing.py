@@ -502,8 +502,6 @@ df = split_rgb_list(final_df, 'mean_rgb')
 
 # Convert the 'tone' column to binary
 df['tone'] = df['tone'].map({'Cool': 1, 'Warm': 0})
-
-
 df.head()
 
 # %%
@@ -511,5 +509,37 @@ df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling
 
 
 #%%
+#--------------------------------------------------------------------------------------------------------------------------------
+# %%
+#ENGAGEMENT METRIC
+
+# Convert timestamp to datetime
+df['timestamp'] = pd.to_datetime(df['timestamp'])
+
+#find the time since post
+scrape_time = pd.to_datetime('2024-07-25 19:13:00')
+
+# Calculate time since post in hours
+df['time_since_post'] = ((scrape_time - df['timestamp']).dt.total_seconds() / 3600).round(2)
+
+# Define the growth rate constant
+k = 1
+
+# f(time since post)- exponential growth function
+df['exp_growth'] = (np.exp(k * df['time_since_post']) - 1).round(2)
+
+#%%
+#creating engagement metric
+df['eng_met'] = ((df['like_count'] + df['comment_count']) / ((df['followers'])+df['exp_growth'])).round(2)
+
+#%%
+# Drop cols
+df = df.drop(columns=['time_since_post', 'exp_growth'])
+df.head()
+
+# %%
+
+df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/eng_met.csv', index=False)
+
 
 #%%

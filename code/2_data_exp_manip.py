@@ -31,22 +31,9 @@ print(missing_values)
 #%%
 #unique values in some particular cols
 
-#%%
-# Combine line columns
-food_df['lines_count'] = food_df['lines_horizontal'] + food_df['lines_vertical'] + food_df['lines_diagonal']
-# Combine RGB columns
-food_df['mean_rgb'] = (food_df['mean_rgb_r'] + food_df['mean_rgb_g'] + food_df['mean_rgb_b']/3)
-# Drop the original columns
-food_df.drop(columns=['lines_horizontal', 'lines_vertical', 'lines_diagonal','triangle_count', 'mean_rgb_r', 'mean_rgb_g', 'mean_rgb_b'], inplace=True)
-
-# Save to a new CSV file
-food_df.to_csv('/Users/rajnavalakha/Documents/Final Sem Project UCD/Mock Data/eng_met_2.csv', index=False)
-food_df.head()
-
 # %%
 # Select specific columns for correlation, if needed
-col_int = ['sharpness', 'colorfulness', 'depth', 'clarity', 'hue', 'saturation', 'brightness', 'rule_of_thirds_x', 'rule_of_thirds_y', 'symmetry_score', 'tone', 'center_score', 'mean_rgb', 'lines_count'] 
-
+col_int = ['sharpness', 'colorfulness', 'depth',  'hue', 'saturation', 'brightness', 'dim_w', 'dim_h', 'rule_of_thirds_x', 'rule_of_thirds_y', 'symmetry_score', 'tone', 'center_score', 'mean_rgb', 'lines_count'] 
 
 correlation_matrix = food_df[col_int].corr()
 
@@ -58,6 +45,26 @@ plt.figure(figsize=(10, 8))
 sns.heatmap(correlation_matrix, annot=True, cmap=mako_cmap)
 plt.title('Correlation Heatmap with Mako Colormap')
 plt.show()
+
+#remove rule or third or dimension?
+
+#%%
+#let's check for multicollinearity and significant variables
+# Calculate VIF scores for each feature
+X = food_df[col_int].dropna()
+
+# Add a constant column for statsmodels
+X = sm.add_constant(X)
+
+# Create a DataFrame to store VIF scores
+vif_data = pd.DataFrame()
+vif_data['Feature'] = X.columns
+vif_data['VIF'] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+
+# Drop the constant column VIF score
+vif_data = vif_data.drop(vif_data[vif_data['Feature'] == 'const'].index)
+
+print(vif_data)
 
 #%%
 #feature engineering
@@ -101,7 +108,7 @@ result_df.head()
 
 #%%
 #save data in csv
-result_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/model_data.csv', index=False)
+# result_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/model_data.csv', index=False)
 
 # %%
 # %%
@@ -110,19 +117,7 @@ sel_num_col = ['sharpness', 'colorfulness', 'depth', 'clarity', 'hue', 'saturati
 
 
 #%%
-#let's check for multicollinearity and significant variables
-# Calculate VIF scores for each feature
-X = food_df[sel_num_col].dropna()
 
-# Add a constant column for statsmodels
-X = sm.add_constant(X)
 
-# Create a DataFrame to store VIF scores
-vif_data = pd.DataFrame()
-vif_data['Feature'] = X.columns
-vif_data['VIF'] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+#%%
 
-# Drop the constant column VIF score
-vif_data = vif_data.drop(vif_data[vif_data['Feature'] == 'const'].index)
-
-print(vif_data)

@@ -631,6 +631,17 @@ sampled_images_df['eng_met'] = ((sampled_images_df['like_count'] + (2 * sampled_
 sampled_images_df.drop(columns=['time_since_post'], inplace=True)
 sampled_images_df.head()
 
+#%%
+#%%
+# Combine line columns
+sampled_images_df['lines_count'] = sampled_images_df['lines_horizontal'] + sampled_images_df['lines_vertical'] + sampled_images_df['lines_diagonal']
+# Combine RGB columns
+sampled_images_df['mean_rgb'] = (sampled_images_df['mean_rgb_r'] + sampled_images_df['mean_rgb_g'] + sampled_images_df['mean_rgb_b']/3)
+# Drop the original columns
+sampled_images_df.drop(columns=['lines_horizontal', 'lines_vertical', 'lines_diagonal','triangle_count', 'mean_rgb_r', 'mean_rgb_g', 'mean_rgb_b'], inplace=True)
+
+sampled_images_df.head()
+
 # %%
 #saving as csv
 sampled_images_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/eng_met.csv', index=False)

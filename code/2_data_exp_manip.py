@@ -67,6 +67,10 @@ vif_data = vif_data.drop(vif_data[vif_data['Feature'] == 'const'].index)
 print(vif_data)
 
 #%%
+#find outliers
+
+
+#%%
 #feature engineering
 #color names- one hot encoding
 # Select the specified columns
@@ -113,7 +117,7 @@ result_df.head()
 # %%
 # %%
 #columns to select after checking correlation
-sel_num_col = ['sharpness', 'colorfulness', 'depth', 'clarity', 'hue', 'saturation', 'brightness', 'rule_of_thirds_x', 'rule_of_thirds_y', 'symmetry_score', 'tone', 'lines_horizontal', 'lines_vertical', 'lines_diagonal', 'triangle_count', 'center_score', 'mean_rgb_r', 'mean_rgb_g', 'mean_rgb_b'] 
+
 
 
 #%%

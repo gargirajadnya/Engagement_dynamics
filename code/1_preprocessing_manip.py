@@ -586,29 +586,32 @@ def split_rgb_list(df, col_name):
     return df
 
 # Apply function to split mean_rgb column
-df = split_rgb_list(final_df, 'mean_rgb')
+sampled_images_df = split_rgb_list(final_df, 'mean_rgb')
 
-# Convert the 'tone' column to binary
-df['tone'] = df['tone'].map({'Cool': 1, 'Warm': 0})
-df.head()
+
 
 # %%
-# df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/im_aesth.csv', index=False)
+# sampled_images_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/im_aesth.csv', index=False)
 
 
 #%%
 #--------------------------------------------------------------------------------------------------------------------------------
 # %%
+
+# Convert the 'tone' column to binary
+sampled_images_df['tone'] = sampled_images_df['tone'].map({'Cool': 1, 'Warm': 0})
+sampled_images_df.head()
+
 #ENGAGEMENT METRIC
 
 # Convert timestamp to datetime
-df['timestamp'] = pd.to_datetime(df['timestamp'])
+sampled_images_df['timestamp'] = pd.to_datetime(sampled_images_df['timestamp'])
 
 #find the time since post
 scrape_time = pd.to_datetime('2024-07-25 19:13:00')
 
 # Calculate time since post in hours
-df['time_since_post'] = ((scrape_time - df['timestamp']).dt.total_seconds() / 3600).round(2)
+sampled_images_df['time_since_post'] = ((scrape_time - sampled_images_df['timestamp']).dt.total_seconds() / 3600).round(2)
 
 # Define the growth rate constant
 # k = 2
@@ -618,17 +621,18 @@ df['time_since_post'] = ((scrape_time - df['timestamp']).dt.total_seconds() / 36
 
 #%%
 #creating engagement metric
-df['eng_met'] = ((df['like_count'] + (2 * df['comment_count'])) / ((df['followers']) 
-                   # + df['exp_growth']
-                    )).round(2)
+sampled_images_df['eng_met'] = ((sampled_images_df['like_count'] + (2 * sampled_images_df['comment_count'])) / ((sampled_images_df['followers'])
+#+df['exp_growth']
+)).round(2)
 
 #%%
 # Drop cols
-df = df.drop(columns=['time_since_post', 'exp_growth'])
-df.head()
+# sampled_images_df.drop(columns=['time_since_post', 'exp_growth'], inplace=True)
+sampled_images_df.drop(columns=['time_since_post'], inplace=True)
+sampled_images_df.head()
 
 # %%
 #saving as csv
-df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/eng_met.csv', index=False)
+sampled_images_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/eng_met.csv', index=False)
 
 #%%

@@ -595,7 +595,7 @@ df['exp_growth'] = (np.exp(k * df['time_since_post']) - 1).round(2)
 
 #%%
 #creating engagement metric
-df['eng_met'] = ((df['like_count'] + df['comment_count']) / ((df['followers'])+df['exp_growth'])).round(2)
+df['eng_met'] = ((df['like_count'] + (2 * df['comment_count'])) / ((df['followers'])+df['exp_growth'])).round(2)
 
 #%%
 # Drop cols
@@ -604,6 +604,6 @@ df.head()
 
 # %%
 #saving as csv
-# df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/eng_met.csv', index=False)
+df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/eng_met.csv', index=False)
 
 #%%

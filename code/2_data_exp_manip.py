@@ -154,7 +154,9 @@ for i, colors in enumerate(top_colors_exploded):
             color_one_hot.loc[i, color] = 1
 
 # Concatenate the one-hot encoded columns with the selected DataFrame
-result_df = pd.concat([selected_df, caption_lang_encoded, color_one_hot], axis=1).drop(['caption_lang', 'color_names', 'dominant_colors'], axis=1)
+result_df = pd.concat([selected_df
+# , caption_lang_encoded
+, color_one_hot], axis=1).drop(['caption_lang', 'color_names', 'dominant_colors'], axis=1)
 
 # Display the first few rows of the resulting DataFrame
 result_df.head()

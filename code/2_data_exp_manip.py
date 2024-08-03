@@ -31,22 +31,10 @@ print(missing_values)
 #%%
 #unique values in some particular cols
 
-#%%
-#new variables
-#Interaction term between brightness and saturation
-food_df['brns_satrn_interaction'] = food_df['brightness'] * food_df['saturation']
-
-#Interaction between 'depth' and 'clarity'
-food_df['depth_clarity_interaction'] = food_df['depth'] * food_df['clarity']
-
-#Log transform for 'symmetry_score'
-food_df['log_symmetry_score'] = np.log1p(food_df['symmetry_score'])
-
 # %%
 # Select specific columns for correlation, if needed
 col_int = ['sharpness', 'colorfulness', 'depth', 'clarity', 'hue', 'saturation', 'brightness', 'rule_of_thirds_x', 'rule_of_thirds_y', 'symmetry_score', 'tone','lines_horizontal', 'lines_vertical', 'lines_diagonal', 'triangle_count', 'center_score', 'mean_rgb_r', 'mean_rgb_g', 'mean_rgb_b', 'brns_satrn_interaction', 'depth_clarity_interaction', 'log_symmetry_score'] 
 
-# col_int =  ['colorfulness', 'depth', 'clarity', 'hue', 'saturation', 'brightness', 'rule_of_thirds_x', 'rule_of_thirds_y', 'symmetry_score',  'lines_vertical', 'center_score', 'tone', 'brns_satrn_interaction', 'depth_clarity_interaction', 'log_symmetry_score'] 
 
 correlation_matrix = food_df[col_int].corr()
 
@@ -130,7 +118,7 @@ food_df.drop(columns=['group'], inplace=True)
 selected_df = food_df.copy()
 
 # One-hot encode 'caption_lang' using 1 and 0
-caption_lang_encoded = pd.get_dummies(selected_df['caption_lang'], prefix='lang').astype(int)
+# caption_lang_encoded = pd.get_dummies(selected_df['caption_lang'], prefix='lang').astype(int)
 
 # Convert the list of colors in 'color_names' to individual columns for one-hot encoding
 color_names_exploded = selected_df['color_names'].apply(lambda x: x.strip("[]").replace("'", "").split(', '))

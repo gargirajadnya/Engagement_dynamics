@@ -174,12 +174,35 @@ sampled_images_df['followers'] = sampled_images_df['followers'].fillna(0).astype
 sampled_images_df.loc[:, 'timestamp'] = sampled_images_df['timestamp'].apply(lambda x: datetime.utcfromtimestamp(x).strftime('%Y-%m-%d %H:%M:%S'))
 
 #%%
+sampled_images_df_copy = sampled_images_df.copy()
 sampled_images_df.shape
 
 #%%
 # Remove rows where followers == 999
 sampled_images_df = sampled_images_df[sampled_images_df['followers'] != 999]
+
+#%%
+#SAMPLING
+# Filter the DataFrame to include only rows where the timestamp is earlier than '25/07/2024'
+sampled_images_df = sampled_images_df[sampled_images_df['timestamp'] < '2024-07-25 00:00:00']
+
 sampled_images_df.shape
+
+#%%
+#%%
+#DATA SAMPLING - bootstrap sampling
+# Set the target number of rows
+target_rows = 600
+
+# Perform bootstrap sampling
+sampled_images_df = sampled_images_df.sample(n=target_rows, replace=True, random_state=1)
+
+# Save the new dataset to a CSV file
+# bootstrap_sampled_data.to_csv('expanded_model_data.csv', index=False)
+
+# Verify the shape of the new dataset
+print("Shape of augmented dataset:", sampled_images_df.shape)
+
 
 # %%
 #--------------------------------------------------------------------------------------------------------------------------------
@@ -588,14 +611,16 @@ scrape_time = pd.to_datetime('2024-07-25 19:13:00')
 df['time_since_post'] = ((scrape_time - df['timestamp']).dt.total_seconds() / 3600).round(2)
 
 # Define the growth rate constant
-k = 1
+# k = 2
 
 # f(time since post)- exponential growth function
-df['exp_growth'] = (np.exp(k * df['time_since_post']) - 1).round(2)
+# df['exp_growth'] = (np.exp(k * df['time_since_post']) - 1).round(2)
 
 #%%
 #creating engagement metric
-df['eng_met'] = ((df['like_count'] + (2 * df['comment_count'])) / ((df['followers'])+df['exp_growth'])).round(2)
+df['eng_met'] = ((df['like_count'] + (2 * df['comment_count'])) / ((df['followers']) 
+                   # + df['exp_growth']
+                    )).round(2)
 
 #%%
 # Drop cols

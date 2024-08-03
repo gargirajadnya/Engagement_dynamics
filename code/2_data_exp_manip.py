@@ -14,9 +14,15 @@ from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 
 #splitting data
 from sklearn.model_selection import train_test_split
+
+#xgboost
+import xgboost as xgb
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+
 
 #%%
 # Load your DataFrame
@@ -35,6 +41,7 @@ print(missing_values)
 # Select specific columns for correlation, if needed
 col_int = ['sharpness', 'colorfulness', 'depth',  'hue', 'saturation', 'brightness', 'dim_w', 'dim_h', 'rule_of_thirds_x', 'rule_of_thirds_y', 'symmetry_score', 'tone', 'center_score', 'mean_rgb', 'lines_count'] 
 
+
 correlation_matrix = food_df[col_int].corr()
 
 # Create a colormap from the 'mako' color palette
@@ -49,6 +56,7 @@ plt.show()
 #remove rule or third or dimension?
 
 #%%
+
 #let's check for multicollinearity and significant variables
 # Calculate VIF scores for each feature
 X = food_df[col_int].dropna()
@@ -64,7 +72,7 @@ vif_data['VIF'] = [variance_inflation_factor(X.values, i) for i in range(X.shape
 # Drop the constant column VIF score
 vif_data = vif_data.drop(vif_data[vif_data['Feature'] == 'const'].index)
 
-print(vif_data)
+vif_data[vif_data['VIF'] > 10]['Feature']
 
 #%%
 #find outliers
@@ -101,27 +109,95 @@ for i, colors in enumerate(top_colors_exploded):
             color_one_hot.loc[i, color] = 1
 
 # Concatenate the one-hot encoded columns with the selected DataFrame
-result_df = pd.concat([selected_df
+model_df = pd.concat([selected_df
 # , caption_lang_encoded
 , color_one_hot], axis=1).drop([ 'color_names'
                                 # ,'caption_lang'
                                 , 'dominant_colors'], axis=1)
 
 # Display the first few rows of the resulting DataFrame
-result_df.head()
+model_df.head()
 
 #%%
 #save data in csv
-# result_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/model_data.csv', index=False)
+# model_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/model_data.csv', index=False)
 
-# %%
 # %%
 #columns to select after checking correlation
 
+#%%
+#standardizing numerical columns
+# Data preprocessing pipeline
+# Define features and target, drop categorical features
 
+#!!!!!!!!SHALL WE REMOVE MEANRGB COLS????!!!!!!!!!!
+model_df['eng_met'].replace([np.inf, -np.inf], 0, inplace=True)
+
+
+X = model_df.drop(columns=['eng_met', 'shortcode', 'timestamp', 'display_url', 'tone_cat', 'hashtags', 'garnishing','like_count', 'comment_count', 'followers', 'pattern_score', 'clarity', 'number_of_colors'
+                          ])
+
+
+y = model_df['eng_met']
+
+# Identify numerical features
+numerical_features = X.select_dtypes(include=[np.number]).columns.tolist()
+
+print("Numerical Features:", numerical_features)
 
 #%%
+#standardizing
+scaler = StandardScaler()
+X_normalized = scaler.fit_transform(X[numerical_features])
+X_normalized = pd.DataFrame(X_normalized, columns=numerical_features)
 
+X_normalized.head()
 
 #%%
+B = X[numerical_features].dropna()
 
+# Add a constant column for statsmodels
+Z = sm.add_constant(B)
+
+# Create a DataFrame to store VIF scores
+vif_data = pd.DataFrame()
+vif_data['Feature'] = Z.columns
+vif_data['VIF'] = [variance_inflation_factor(Z.values, i) for i in range(Z.shape[1])]
+
+# Drop the constant column VIF score
+vif_data = vif_data.drop(vif_data[vif_data['Feature'] == 'const'].index)
+
+vif_data[vif_data['VIF'] > 10]['Feature']
+
+#%%
+#PCA
+pca = PCA()
+X_pca = pca.fit_transform(X_normalized)
+explained_variance = pca.explained_variance_ratio_
+print("Explained Variance Ratio:", explained_variance)
+
+X_selected_pca = X_pca[:, :10]
+
+# %%
+#SPLITTIN
+X_train_pca, X_test_pca, y_train, y_test = train_test_split(X_selected_pca, y, test_size=0.2, random_state=42)
+
+#%%
+# Initialize the XGBoost model
+model = xgb.XGBRegressor()
+model.fit(X_train_pca, y_train)
+
+# Make predictions
+y_pred = model.predict(X_test_pca)
+
+
+# Evaluate the model using regression metrics
+mse = mean_squared_error(y_test, y_pred)
+mae = mean_absolute_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+
+print("Mean Squared Error:", mse)
+print("Mean Absolute Error:", mae)
+print("R-squared:", r2)
+
+# %%

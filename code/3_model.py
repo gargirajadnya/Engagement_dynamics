@@ -51,38 +51,44 @@ print("Numerical Features:", numerical_features)
 
 #%%
 # Data preprocessing pipeline
-numeric_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='mean')),
-    ('scaler', StandardScaler())
-])
+# numeric_transformer = Pipeline(steps=[
+#     ('imputer', SimpleImputer(strategy='mean')),
+#     ('scaler', StandardScaler())
+# ])
 
-preprocessor = ColumnTransformer(
-    transformers=[
-        ('num', numeric_transformer, numerical_features)
-    ])
+# preprocessor = ColumnTransformer(
+#     transformers=[
+#         ('num', numeric_transformer, numerical_features)
+#     ])
 
-# Fit and transform the entire data
-X_transformed = preprocessor.fit_transform(X)
+# # Fit and transform the entire data
+# X_transformed = preprocessor.fit_transform(X)
 
-# Manually rename the columns to remove the 'num_' prefix
-transformed_column_names = numerical_features
+# # Manually rename the columns to remove the 'num_' prefix
+# transformed_column_names = numerical_features
 
-# Convert the transformed data back to DataFrame for better readability
-X_transformed_df = pd.DataFrame(X_transformed, columns=transformed_column_names)
+# # Convert the transformed data back to DataFrame for better readability
+# X_transformed_df = pd.DataFrame(X_transformed, columns=transformed_column_names)
 
 
-# Display the transformed data
-X_transformed_df.head()
+# # Display the transformed data
+# X_transformed_df.head()
 
 #%%
-# Save the transformed data along with the target variable
-transformed_data = pd.concat([X_transformed_df, food_df['eng_met'].reset_index(drop=True)], axis=1)
+# # Save the transformed data along with the target variable
+# transformed_data = pd.concat([X_transformed_df, food_df['eng_met'].reset_index(drop=True)], axis=1)
 
-# Save to a new CSV file (optional)
-# transformed_data.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/transformed_eng_met.csv', index=False)
+# # Save to a new CSV file (optional)
+# # transformed_data.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/transformed_eng_met.csv', index=False)
 
-# Display the transformed data with the target variable
-transformed_data.head()
+# # Display the transformed data with the target variable
+# transformed_data.head()
+
+
+#%%
+#standardizing
+scaler = StandardScaler()
+X_normalized = scaler.fit_transform(X)
 
 # %%
 #SPLITTING

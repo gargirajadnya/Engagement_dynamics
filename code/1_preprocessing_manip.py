@@ -189,20 +189,6 @@ sampled_images_df = sampled_images_df[sampled_images_df['timestamp'] < '2024-07-
 sampled_images_df.shape
 
 #%%
-#%%
-#DATA SAMPLING - bootstrap sampling
-# Set the target number of rows
-target_rows = 600
-
-# Perform bootstrap sampling
-sampled_images_df = sampled_images_df.sample(n=target_rows, replace=True, random_state=1)
-
-# Save the new dataset to a CSV file
-# bootstrap_sampled_data.to_csv('expanded_model_data.csv', index=False)
-
-# Verify the shape of the new dataset
-print("Shape of augmented dataset:", sampled_images_df.shape)
-
 
 # %%
 #--------------------------------------------------------------------------------------------------------------------------------
@@ -641,6 +627,20 @@ sampled_images_df['mean_rgb'] = (sampled_images_df['mean_rgb_r'] + sampled_image
 sampled_images_df.drop(columns=['lines_horizontal', 'lines_vertical', 'lines_diagonal','triangle_count', 'mean_rgb_r', 'mean_rgb_g', 'mean_rgb_b'], inplace=True)
 
 sampled_images_df.head()
+
+#%%
+#DATA SAMPLING - bootstrap sampling
+# Set the target number of rows
+target_rows = 600
+
+# Perform bootstrap sampling
+sampled_images_df = sampled_images_df.sample(n=target_rows, replace=True, random_state=1)
+
+# Save the new dataset to a CSV file
+# bootstrap_sampled_data.to_csv('expanded_model_data.csv', index=False)
+
+# Verify the shape of the new dataset
+print("Shape of augmented dataset:", sampled_images_df.shape)
 
 # %%
 #saving as csv

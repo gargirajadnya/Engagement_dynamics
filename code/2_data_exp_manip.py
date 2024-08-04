@@ -77,19 +77,19 @@ vif_data[vif_data['VIF'] > 10]['Feature']
 
 #%%
 #find outliers
-
+model_df = food_df.copy()
 
 #%%
 #feature engineering
 #color names- one hot encoding
 # Select the specified columns
-selected_df = food_df.copy()
+selected_df = model_df.copy()
 
 # One-hot encode 'caption_lang' using 1 and 0
 # caption_lang_encoded = pd.get_dummies(selected_df['caption_lang'], prefix='lang').astype(int)
 
 # Convert the list of colors in 'color_names' to individual columns for one-hot encoding
-color_names_exploded = selected_df['color_names'].apply(lambda x: x.strip("[]").replace("'", "").split(', '))
+color_names_exploded = selected_df['color_names'].apply(lambda x: x.strip("[]").replace("'", "").split(', ') if pd.notna(x) else [])
 
 # Get only the top 3 dominant colors
 top_colors_exploded = color_names_exploded.apply(lambda x: x[:3])
@@ -110,6 +110,7 @@ for i, colors in enumerate(top_colors_exploded):
             color_one_hot.loc[i, color] = 1
 
 # Concatenate the one-hot encoded columns with the selected DataFrame
+
 model_df = pd.concat([selected_df
 # , caption_lang_encoded
 , color_one_hot], axis=1).drop([ 'color_names'
@@ -119,23 +120,68 @@ model_df = pd.concat([selected_df
 # Display the first few rows of the resulting DataFrame
 model_df.head()
 
+# %%
+outlier_df = food_df.drop(columns=['shortcode', 'timestamp', 'like_count', 'comment_count', 'hashtags', 'caption', 'display_url', 'number_of_colors', 'tone_cat', 'garnishing', 'clarity', 'dominant_colors', 'followers', 'pattern_score', 'caption_lang', 'color_names', 'exp_growth', 'rule_of_thirds_x', 'rule_of_thirds_y', 'mean_rgb', 'brightness'
+                          ])
+outlier_df.shape
+#%%
+
+# Initialize a DataFrame to keep track of rows to remove
+rows_to_remove = pd.Series([False] * len(model_df))
+
+# Dictionary to keep track of the number of outliers per column
+outlier_counts = {}
+
+# Iterate through each numeric column to detect outliers
+numeric_columns = outlier_df.select_dtypes(include=['float64', 'int64']).columns
+
+for column_name in numeric_columns:
+    # Calculate Q1, Q3, and IQR for outlier detection
+    Q1 = outlier_df[column_name].quantile(0.25)
+    Q3 = outlier_df[column_name].quantile(0.75)
+    IQR = Q3 - Q1
+
+    # Identify outliers
+    is_outlier = (outlier_df[column_name] < (Q1 - 1.5 * IQR)) | (outlier_df[column_name] > (Q3 + 1.5 * IQR))
+    
+    # Count outliers
+    num_outliers = is_outlier.sum()
+    outlier_counts[column_name] = num_outliers
+
+    # Update rows_to_remove series
+    rows_to_remove = rows_to_remove | is_outlier
+
+    # Create a box plot for visualization
+    plt.figure(figsize=(10, 6))
+    plt.boxplot(outlier_df[column_name], vert=False)
+    plt.title(f'Box plot for {column_name}')
+    plt.xlabel(column_name)
+    plt.show()
+
+# Remove the rows with any outliers
+model_df = model_df[~rows_to_remove]
+
+# Display the number of outliers per column
+print("Number of outliers per column:")
+for column_name, count in outlier_counts.items():
+    print(f"{column_name}: {count}")
+
+# Display the shape of the resulting DataFrame
+print(f"Shape of DataFrame after removing outliers: {model_df.shape}")
+
+
 #%%
 #save data in csv
 # model_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/model_data.csv', index=False)
-
-# %%
-#columns to select after checking correlation
 
 #%%
 #standardizing numerical columns
 # Data preprocessing pipeline
 # Define features and target, drop categorical features
 
-#!!!!!!!!SHALL WE REMOVE MEANRGB COLS????!!!!!!!!!!
-model_df['eng_met'].replace([np.inf, -np.inf], 0, inplace=True)
+model_df['eng_met'] = model_df['eng_met'].replace([np.inf, -np.inf], 0)
 
-
-X = model_df.drop(columns=['eng_met', 'shortcode', 'timestamp', 'display_url', 'tone_cat', 'hashtags', 'garnishing','like_count', 'comment_count', 'followers', 'pattern_score', 'clarity', 'number_of_colors'
+X = model_df.drop(columns=['eng_met', 'shortcode', 'timestamp', 'like_count', 'comment_count', 'hashtags', 'caption', 'display_url', 'number_of_colors', 'tone_cat', 'garnishing', 'clarity',  'followers', 'pattern_score', 'caption_lang', 'exp_growth', 'rule_of_thirds_x', 'rule_of_thirds_y', 'mean_rgb', 'brightness'
                           ])
 
 
@@ -169,6 +215,7 @@ vif_data['VIF'] = [variance_inflation_factor(Z.values, i) for i in range(Z.shape
 vif_data = vif_data.drop(vif_data[vif_data['Feature'] == 'const'].index)
 
 vif_data[vif_data['VIF'] > 10]['Feature']
+
 
 #%%
 #PCA
@@ -216,5 +263,7 @@ r2 = r2_score(y_test, y_pred)
 print('SVR RMSE:', rmse)
 print('SVR MAE:', mae)
 print('SVR R-squared:', r2)
+
+#%%
 
 #%%

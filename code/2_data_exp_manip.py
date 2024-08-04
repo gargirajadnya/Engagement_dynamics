@@ -222,17 +222,20 @@ vif_data[vif_data['VIF'] > 10]['Feature']
 
 
 #%%
-#PCA
+# #PCA
 pca = PCA()
 X_pca = pca.fit_transform(X_normalized)
 explained_variance = pca.explained_variance_ratio_
 print("Explained Variance Ratio:", explained_variance)
 
-X_selected_pca = X_pca[:, :10]
+X_selected_pca = X_pca[:, :20]
 
 # %%
 #SPLITTIN
-X_train_pca, X_test_pca, y_train, y_test = train_test_split(X_selected_pca, y, test_size=0.3, random_state=42)
+# X_train_pca, X_test_pca, y_train, y_test = train_test_split(X_selected_pca, y, test_size=0.3, random_state=42)
+
+X_train_pca, X_test_pca, y_train, y_test = train_test_split(X_normalized, y, test_size=0.2, random_state=42)
+
 
 #%%
 # Initialize the XGBoost model

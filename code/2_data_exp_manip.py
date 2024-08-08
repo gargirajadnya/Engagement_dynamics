@@ -19,9 +19,15 @@ from sklearn.decomposition import PCA
 #splitting data
 from sklearn.model_selection import train_test_split
 
-#xgboost
+#models
 import xgboost as xgb
 from sklearn.svm import SVR
+from sklearn.linear_model import LinearRegression
+from sklearn.neural_network import MLPRegressor
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import RandomForestRegressor
+
+#metrics
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 
@@ -185,8 +191,8 @@ print(f"Shape of DataFrame after removing outliers: {model_df.shape}")
 
 model_df['eng_met'] = model_df['eng_met'].replace([np.inf, -np.inf], 0)
 
-X = model_df.drop(columns=['eng_met', 'shortcode', 'timestamp', 'like_count', 'comment_count', 'hashtags', 'caption', 'display_url', 'number_of_colors', 'tone_cat', 'garnishing', 'clarity',  'followers', 'pattern_score', 'caption_lang', 'exp_growth', 'rule_of_thirds_x', 'rule_of_thirds_y', 'mean_rgb', 'brightness'
-                          ])
+# X = model_df.drop(columns=['eng_met', 'shortcode', 'timestamp', 'like_count', 'comment_count', 'hashtags', 'caption', 'display_url', 'number_of_colors', 'tone_cat', 'garnishing', 'clarity',  'followers', 'pattern_score', 'caption_lang', 'exp_growth', 'rule_of_thirds_x', 'rule_of_thirds_y', 'mean_rgb', 'brightness' ])
+X = model_df[[ 'sharpness', 'colorfulness', 'depth', 'hue','saturation','tone', 'lines_count']]
 
 
 y = model_df['eng_met']
@@ -250,25 +256,97 @@ mse = mean_squared_error(y_test, y_pred)
 mae = mean_absolute_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
 
+print('XGBoost results:')
 print("Mean Squared Error:", mse)
 print("Mean Absolute Error:", mae)
 print("R-squared:", r2)
 
 # %%
-svr_model = SVR(kernel='rbf', C=100, gamma='scale', epsilon=0.1)
-svr_model.fit(X_train_pca, y_train)
+# Initialize the linear regression model
+lin_reg = LinearRegression()
 
-# Make predictions on the test set
-y_pred = svr_model.predict(X_test_pca)
+# Train the model
+lin_reg.fit(X_train_pca, y_train)
+
+# Make predictions
+y_pred_lr = lin_reg.predict(X_test_pca)
 
 # Evaluate the model
-rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-mae = mean_absolute_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
+mse_lr = mean_squared_error(y_test, y_pred_lr)
+mae_lr = mean_absolute_error(y_test, y_pred_lr)
+r2_lr = r2_score(y_test, y_pred_lr)
 
-print('SVR RMSE:', rmse)
-print('SVR MAE:', mae)
-print('SVR R-squared:', r2)
+print('Multiple Linear Regression results:')
+print("Mean Squared Error:", mse_lr)
+print("Mean Absolute Error:", mae_lr)
+print("R-squared:", r2_lr)
+
+#%%
+
+# Train the MLP model on the cleaned data
+mlp_cleaned = MLPRegressor(hidden_layer_sizes=(50, 30), activation='relu', max_iter=1000, random_state=42)
+mlp_cleaned.fit(X_train_pca, y_train)
+
+# Make predictions
+y_pred_cleaned = mlp_cleaned.predict(X_test_pca)
+
+# Evaluate the model
+mse_cleaned = mean_squared_error(y_test, y_pred_cleaned)
+r2_cleaned = r2_score(y_test, y_pred_cleaned)
+
+print(f"Mean Squared Error: {mse_cleaned}")
+print(f"R-squared: {r2_cleaned}")
+
+
+#%%
+
+from sklearn.svm import SVR
+
+svr = SVR(kernel='rbf')
+svr.fit(X_train_pca, y_train)
+
+y_pred_svr = svr.predict(X_test_pca)
+
+mse_svr = mean_squared_error(y_test, y_pred_svr)
+mae_svr = mean_absolute_error(y_test, y_pred_svr)
+r2_svr = r2_score(y_test, y_pred_svr)
+
+print('Support Vector Regression results:')
+print("Mean Squared Error:", mse_svr)
+print("Mean Absolute Error:", mae_svr)
+print("R-squared:", r2_svr)
+
+#%%
+
+gbr = GradientBoostingRegressor(n_estimators=100, random_state=42)
+gbr.fit(X_train_pca, y_train)
+
+y_pred_gbr = gbr.predict(X_test_pca)
+
+mse_gbr = mean_squared_error(y_test, y_pred_gbr)
+mae_gbr = mean_absolute_error(y_test, y_pred_gbr)
+r2_gbr = r2_score(y_test, y_pred_gbr)
+
+print('Gradient Boosting results:')
+print("Mean Squared Error:", mse_gbr)
+print("Mean Absolute Error:", mae_gbr)
+print("R-squared:", r2_gbr)
+
+#%%
+
+rf = RandomForestRegressor(n_estimators=100, random_state=42)
+rf.fit(X_train_pca, y_train)
+
+y_pred_rf = rf.predict(X_test_pca)
+
+mse_rf = mean_squared_error(y_test, y_pred_rf)
+mae_rf = mean_absolute_error(y_test, y_pred_rf)
+r2_rf = r2_score(y_test, y_pred_rf)
+
+print('Random Forest results:')
+print("Mean Squared Error:", mse_rf)
+print("Mean Absolute Error:", mae_rf)
+print("R-squared:", r2_rf)
 
 #%%
 

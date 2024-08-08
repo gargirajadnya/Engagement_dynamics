@@ -189,7 +189,7 @@ print(f"Shape of DataFrame after removing outliers: {model_df.shape}")
 # Data preprocessing pipeline
 # Define features and target, drop categorical features
 
-model_df['eng_met'] = model_df['eng_met'].replace([np.inf, -np.inf], 0)
+# model_df['eng_met'] = model_df['eng_met'].replace([np.inf, -np.inf], 0)
 
 # X = model_df.drop(columns=['eng_met', 'shortcode', 'timestamp', 'like_count', 'comment_count', 'hashtags', 'caption', 'display_url', 'number_of_colors', 'tone_cat', 'garnishing', 'clarity',  'followers', 'pattern_score', 'caption_lang', 'exp_growth', 'rule_of_thirds_x', 'rule_of_thirds_y', 'mean_rgb', 'brightness' ])
 X = model_df[[ 'sharpness', 'colorfulness', 'depth', 'hue','saturation','tone', 'lines_count']]

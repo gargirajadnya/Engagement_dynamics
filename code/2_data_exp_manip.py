@@ -50,10 +50,13 @@ food_df['eng_met'] = np.nan_to_num(food_df['eng_met'], nan=0)
 
 # %%
 # Select specific columns for correlation, if needed
-col_int = ['sharpness', 'colorfulness', 'depth',  'hue', 'saturation', 'brightness', 'dim_w', 'dim_h', 'rule_of_thirds_x', 'rule_of_thirds_y', 'symmetry_score', 'tone', 'center_score', 'mean_rgb', 'lines_count'] 
+# col_int = ['sharpness', 'colorfulness', 'depth',  'hue', 'saturation', 'brightness', 'dim_w', 'dim_h', 'rule_of_thirds_x', 'rule_of_thirds_y', 'symmetry_score', 'tone', 'center_score', 'mean_rgb', 'lines_count'] 
 
+num_f = food_df.select_dtypes(include=[np.number]).columns.tolist()
 
-correlation_matrix = food_df[col_int].corr()
+print("Numerical Features:", num_f)
+
+correlation_matrix = food_df[num_f].corr()
 
 # Create a colormap from the 'mako' color palette
 mako_cmap = sns.color_palette("Blues", as_cmap=True)
@@ -238,9 +241,9 @@ X_selected_pca = X_pca[:, :20]
 
 # %%
 #SPLITTIN
-# X_train_pca, X_test_pca, y_train, y_test = train_test_split(X_selected_pca, y, test_size=0.3, random_state=42)
+X_train_pca, X_test_pca, y_train, y_test = train_test_split(X_selected_pca, y, test_size=0.3, random_state=42)
 
-X_train_pca, X_test_pca, y_train, y_test = train_test_split(X_normalized, y, test_size=0.2, random_state=42)
+# X_train_pca, X_test_pca, y_train, y_test = train_test_split(X_normalized, y, test_size=0.2, random_state=42)
 
 
 #%%

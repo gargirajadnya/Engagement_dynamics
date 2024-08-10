@@ -50,13 +50,13 @@ food_df['eng_met'] = np.nan_to_num(food_df['eng_met'], nan=0)
 
 # %%
 # Select specific columns for correlation, if needed
-# col_int = ['sharpness', 'colorfulness', 'depth',  'hue', 'saturation', 'brightness', 'dim_w', 'dim_h', 'rule_of_thirds_x', 'rule_of_thirds_y', 'symmetry_score', 'tone', 'center_score', 'mean_rgb', 'lines_count'] 
+col_int = ['sharpness', 'colorfulness', 'depth',  'hue', 'saturation', 'brightness', 'dim_w', 'dim_h', 'rule_of_thirds_x', 'rule_of_thirds_y', 'symmetry_score', 'tone', 'center_score', 'mean_rgb', 'lines_count', 'eng_met'] 
 
 num_f = food_df.select_dtypes(include=[np.number]).columns.tolist()
 
 print("Numerical Features:", num_f)
 
-correlation_matrix = food_df[num_f].corr()
+correlation_matrix = food_df[col_int].corr()
 
 # Create a colormap from the 'mako' color palette
 mako_cmap = sns.color_palette("Blues", as_cmap=True)

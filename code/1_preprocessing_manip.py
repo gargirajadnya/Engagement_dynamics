@@ -39,16 +39,16 @@ from sklearn.cluster import KMeans
 #%%
 directory_path = '/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/raw_data'
 
-def sort_key(raw_response):
-    return int(raw_response.split('-')[1].split('.')[0])
+def sort_key(raw):
+    return int(raw.split('_')[1].split('.')[0])
 
 # Get a list of all CSV files in the directory and sort them using the custom key
 csv_files = sorted([file for file in os.listdir(directory_path) if file.endswith('.csv')], key=sort_key)
 
-# Read and concatenate all CSV files
+#%% Read and concatenate all CSV files
 sampled_images_df = pd.concat([pd.read_csv(os.path.join(directory_path, file)) for file in csv_files], ignore_index=True)
 
-#load follower data
+#%%load follower data
 follower_df = pd.read_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/followers.csv')
 
 #%%
@@ -58,7 +58,7 @@ sampled_images_df.shape
 
 #%%
 # Merging both dataframes on shortcode
-sampled_images_df = pd.merge(sampled_images_df, follower_df, on='node/shortcode')
+# sampled_images_df = pd.merge(sampled_images_df, follower_df, on='node/shortcode')
 sampled_images_df.head()
 
 
@@ -92,21 +92,22 @@ def prep_colnames(my_df):
 #%%
 # Function to extract terms beginning with "#"
 def extract_hashtags(text):
-    hashtags = re.findall(r'#\w+', text)
-    return ', '.join(hashtags)
+    if not isinstance(text, str):
+        return []  # Or handle this case as appropriate
+    return re.findall(r'#\w+', text)
 
 #%%
 # Function to extract clean text
 def clean_text(text):
-    # Remove hashtags and the words following them
-    text = re.sub(r'#\w+', '', text)
-    
-    # Remove all special symbols (non-alphanumeric and non-whitespace characters)
-    text = re.sub(r'[^A-Za-z0-9\s]', '', text)
-    
-    # Remove multiple spaces and strip extra whitespace
-    text = re.sub(r'\s+', ' ', text).strip()
-    
+    if not isinstance(text, str):
+        return ''  # or handle it in another appropriate way
+    # Example cleaning process (customize as needed)
+    text = text.lower()  # convert to lowercase
+    text = re.sub(r'http\S+', '', text)  # remove URLs
+    text = re.sub(r'@\w+', '', text)  # remove mentions
+    text = re.sub(r'#\w+', '', text)  # remove hashtags
+    text = re.sub(r'[^a-zA-Z\s]', '', text)  # remove punctuation
+    text = text.strip()  # remove leading and trailing whitespace
     return text
 
 def clean_hashtags(text):
@@ -167,7 +168,7 @@ sampled_images_df.head()
 # Convert columns to integers
 sampled_images_df['like_count'] = sampled_images_df['like_count'].fillna(0).astype(int)
 sampled_images_df['comment_count'] = sampled_images_df['comment_count'].fillna(0).astype(int)
-sampled_images_df['followers'] = sampled_images_df['followers'].fillna(0).astype(int)
+# sampled_images_df['followers'] = sampled_images_df['followers'].fillna(0).astype(int)
 
 #%%
 # Convert timestamp to datetime
@@ -179,87 +180,15 @@ sampled_images_df.shape
 
 #%%
 # Remove rows where followers == 999
-sampled_images_df = sampled_images_df[sampled_images_df['followers'] != 999]
+# sampled_images_df = sampled_images_df[sampled_images_df['followers'] != 999]
 
 #%%
 #SAMPLING
 # Filter the DataFrame to include only rows where the timestamp is earlier than '25/07/2024'
-sampled_images_df = sampled_images_df[sampled_images_df['timestamp'] < '2024-07-25 00:00:00']
-
+sampled_images_df = sampled_images_df[sampled_images_df['timestamp'] < '2024-08-10 00:00:00']
 sampled_images_df.shape
 
 #%%
-
-# %%
-#--------------------------------------------------------------------------------------------------------------------------------
-#%%
-#preprocess the dominant_colors column to get color names
-def replace_array_string(s):
-    return s.replace('array', 'np.array')
-
-# Apply the function to the 'dominant_colors' column
-sampled_images_df['dominant_colors'] = sampled_images_df['dominant_colors'].apply(replace_array_string)
-
-# Use the updated parse function
-def parse_array_string(array_string):
-    array_string = array_string.replace('np.array(', '').replace(')', '')
-    try:
-        array_list = ast.literal_eval(array_string)
-        return np.array(array_list)
-    except (SyntaxError, ValueError) as e:
-        print(f"Error parsing string: {array_string} -> {e}")
-        return np.array([])
-
-sampled_images_df['dominant_colors'] = sampled_images_df['dominant_colors'].apply(parse_array_string)
-
-#%%
-#color names
-def closest_color(requested_color):
-    min_colors = {}
-    for key, name in webcolors.CSS3_HEX_TO_NAMES.items():
-        r_c, g_c, b_c = webcolors.hex_to_rgb(key)
-        rd = (r_c - requested_color[0]) ** 2
-        gd = (g_c - requested_color[1]) ** 2
-        bd = (b_c - requested_color[2]) ** 2
-        min_colors[(rd + gd + bd)] = name
-    return min_colors[min(min_colors.keys())]
-
-def get_color_name(rgb_tuple):
-    try:
-        # Convert RGB to hex
-        hex_value = webcolors.rgb_to_hex(rgb_tuple)
-        # Get the color name directly
-        return webcolors.hex_to_name(hex_value)
-    except ValueError:
-        # If exact match not found, find the closest color
-        return closest_color(rgb_tuple)
-
-def get_color_names_from_rgb_list(rgb_list):
-    color_names = []
-    for rgb in rgb_list:
-        # Convert numpy array to tuple if necessary
-        if isinstance(rgb, np.ndarray):
-            rgb = tuple(rgb.astype(int))  # Convert to tuple and ensure integer values
-        color_names.append(get_color_name(rgb))
-    return color_names
-
-
-#%%
-sampled_images_df['color_names'] = sampled_images_df['dominant_colors'].apply(get_color_names_from_rgb_list)
-
-#%%
-new_df = sampled_images_df.copy()
-
-#%%
-# select required columns
-selected_columns = ['shortcode', 'timestamp', 'like_count', 'comment_count', 'followers', 'dim_h', 'dim_w', 'hashtags', 'caption', 'display_url']
-
-# new DataFrame with the selected columns
-sampled_images_df = sampled_images_df[selected_columns]
-sampled_images_df.shape
-
-#%%
-sampled_images_df.head(10)
 
 # %%
 # sampled_images_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/clean_data.csv', index=False)
@@ -575,6 +504,78 @@ def split_rgb_list(df, col_name):
 sampled_images_df = split_rgb_list(final_df, 'mean_rgb')
 
 
+#%%
+
+# %%
+#--------------------------------------------------------------------------------------------------------------------------------
+#%%
+#preprocess the dominant_colors column to get color names
+def replace_array_string(s):
+    return s.replace('array', 'np.array')
+
+# Apply the function to the 'dominant_colors' column
+sampled_images_df['dominant_colors'] = sampled_images_df['dominant_colors'].apply(replace_array_string)
+
+# Use the updated parse function
+def parse_array_string(array_string):
+    array_string = array_string.replace('np.array(', '').replace(')', '')
+    try:
+        array_list = ast.literal_eval(array_string)
+        return np.array(array_list)
+    except (SyntaxError, ValueError) as e:
+        print(f"Error parsing string: {array_string} -> {e}")
+        return np.array([])
+
+sampled_images_df['dominant_colors'] = sampled_images_df['dominant_colors'].apply(parse_array_string)
+
+#%%
+#color names
+def closest_color(requested_color):
+    min_colors = {}
+    for key, name in webcolors.CSS3_HEX_TO_NAMES.items():
+        r_c, g_c, b_c = webcolors.hex_to_rgb(key)
+        rd = (r_c - requested_color[0]) ** 2
+        gd = (g_c - requested_color[1]) ** 2
+        bd = (b_c - requested_color[2]) ** 2
+        min_colors[(rd + gd + bd)] = name
+    return min_colors[min(min_colors.keys())]
+
+def get_color_name(rgb_tuple):
+    try:
+        # Convert RGB to hex
+        hex_value = webcolors.rgb_to_hex(rgb_tuple)
+        # Get the color name directly
+        return webcolors.hex_to_name(hex_value)
+    except ValueError:
+        # If exact match not found, find the closest color
+        return closest_color(rgb_tuple)
+
+def get_color_names_from_rgb_list(rgb_list):
+    color_names = []
+    for rgb in rgb_list:
+        # Convert numpy array to tuple if necessary
+        if isinstance(rgb, np.ndarray):
+            rgb = tuple(rgb.astype(int))  # Convert to tuple and ensure integer values
+        color_names.append(get_color_name(rgb))
+    return color_names
+
+
+#%%
+sampled_images_df['color_names'] = sampled_images_df['dominant_colors'].apply(get_color_names_from_rgb_list)
+
+#%%
+new_df = sampled_images_df.copy()
+
+#%%
+# select required columns
+selected_columns = ['shortcode', 'timestamp', 'like_count', 'comment_count', 'followers', 'dim_h', 'dim_w', 'hashtags', 'caption', 'display_url']
+
+# new DataFrame with the selected columns
+sampled_images_df = sampled_images_df[selected_columns]
+sampled_images_df.shape
+
+#%%
+sampled_images_df.head(10)
 
 # %%
 # sampled_images_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/im_aesth.csv', index=False)

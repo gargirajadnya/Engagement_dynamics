@@ -35,7 +35,7 @@ from collections import Counter
 from sklearn.cluster import KMeans
 
 #%%
-directory_path = '/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/raw_data'
+directory_path = '/Users/rajnavalakha/Documents/Engagement_dynamics/data'
 
 def sort_key(raw_response):
     return int(raw_response.split('-')[1].split('.')[0])

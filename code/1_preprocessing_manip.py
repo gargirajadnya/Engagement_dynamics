@@ -586,6 +586,8 @@ sampled_images_df = split_rgb_list(final_df, 'mean_rgb')
 sampled_images_df['tone'] = sampled_images_df['tone'].map({'Cool': 1, 'Warm': 0})
 sampled_images_df.head()
 
+
+#%%
 #ENGAGEMENT METRIC
 
 # Convert timestamp to datetime

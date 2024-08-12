@@ -4,25 +4,34 @@
 import pandas as pd
 import numpy as np
 
-
 #standardization
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 
 #splitting data
 from sklearn.model_selection import train_test_split
 
-#SVM
+#models
+import xgboost as xgb
 from sklearn.svm import SVR
+from sklearn.linear_model import LinearRegression
+from sklearn.neural_network import MLPRegressor
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import RandomForestRegressor
+
+#metrics
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
-#NEURAL NETWORK
+#mlp
+import requests
+from PIL import Image
+from io import BytesIO
+from tqdm import tqdm
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout, BatchNormalization
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras import layers, models
 
 #%%
 #read model data
@@ -30,19 +39,13 @@ food_df = pd.read_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/M
 food_df.head()
 
 #%%
-#%%
 #standardizing numerical columns
-# Data preprocessing pipeline
-# Define features and target, drop categorical features
 
-#!!!!!!!!SHALL WE REMOVE MEANRGB COLS????!!!!!!!!!!
+# model_df['eng_met'] = model_df['eng_met'].replace([np.inf, -np.inf], 0)
 
-X = food_df.drop(columns=['eng_met', 'shortcode', 'timestamp', 'display_url', 'tone_cat', 'hashtags', 'garnishing','like_count', 'comment_count', 'followers', 'pattern_score'
-                        #   ,'lines_horizontal',  'lines_diagonal', 'triangle_count'
-                          ])
+X = model_df[['dim_h', 'dim_w', 'brilliance', 'colorfulness', 'vibrancy', 'tint', 'definition', 'vignette', 'tone', 'depth', 'contrast', 'brightness', 'symmetry_score', 'center_score']]
 
-
-y = food_df['eng_met']
+y = model_df['eng_met']
 
 # Identify numerical features
 numerical_features = X.select_dtypes(include=[np.number]).columns.tolist()
@@ -50,77 +53,153 @@ numerical_features = X.select_dtypes(include=[np.number]).columns.tolist()
 print("Numerical Features:", numerical_features)
 
 #%%
-# Data preprocessing pipeline
-# numeric_transformer = Pipeline(steps=[
-#     ('imputer', SimpleImputer(strategy='mean')),
-#     ('scaler', StandardScaler())
-# ])
-
-# preprocessor = ColumnTransformer(
-#     transformers=[
-#         ('num', numeric_transformer, numerical_features)
-#     ])
-
-# # Fit and transform the entire data
-# X_transformed = preprocessor.fit_transform(X)
-
-# # Manually rename the columns to remove the 'num_' prefix
-# transformed_column_names = numerical_features
-
-# # Convert the transformed data back to DataFrame for better readability
-# X_transformed_df = pd.DataFrame(X_transformed, columns=transformed_column_names)
-
-
-# # Display the transformed data
-# X_transformed_df.head()
-
-#%%
-# # Save the transformed data along with the target variable
-# transformed_data = pd.concat([X_transformed_df, food_df['eng_met'].reset_index(drop=True)], axis=1)
-
-# # Save to a new CSV file (optional)
-# # transformed_data.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/transformed_eng_met.csv', index=False)
-
-# # Display the transformed data with the target variable
-# transformed_data.head()
-
-
-#%%
 #standardizing
 scaler = StandardScaler()
-X_normalized = scaler.fit_transform(X)
+X_normalized = scaler.fit_transform(X[numerical_features])
+X_normalized = pd.DataFrame(X_normalized, columns=numerical_features)
+
+X_normalized.head()
+
+#%%
+B = X[numerical_features].dropna()
+
+# Add a constant column for statsmodels
+Z = sm.add_constant(B)
+
+# Create a DataFrame to store VIF scores
+vif_data = pd.DataFrame()
+vif_data['Feature'] = Z.columns
+vif_data['VIF'] = [variance_inflation_factor(Z.values, i) for i in range(Z.shape[1])]
+
+# Drop the constant column VIF score
+vif_data = vif_data.drop(vif_data[vif_data['Feature'] == 'const'].index)
+
+vif_data[vif_data['VIF'] > 10]['Feature']
+
+
+#%%
+# #PCA
+pca = PCA()
+X_pca = pca.fit_transform(X_normalized)
+explained_variance = pca.explained_variance_ratio_
+print("Explained Variance Ratio:", explained_variance)
+
+X_selected_pca = X_pca[:, :20]
 
 # %%
-#SPLITTING
-# Split the data into features and target
-X_transformed = transformed_data.drop(columns=['eng_met'])
-y = transformed_data['eng_met']
+#SPLITTIN
+# X_train_pca, X_test_pca, y_train, y_test = train_test_split(X_selected_pca, y, test_size=0.3, random_state=42)
 
-# Split the data into training and test sets
-X_train, X_test, y_train, y_test = train_test_split(X_transformed, y, test_size=0.2, random_state=42)
-
-# Display the shapes of the split data
-print("X_train shape:", X_train.shape)
-print("X_test shape:", X_test.shape)
-print("y_train shape:", y_train.shape)
-print("y_test shape:", y_test.shape)
+X_train_pca, X_test_pca, y_train, y_test = train_test_split(X_normalized, y, test_size=0.2, random_state=42)
 
 # %%
+# Initialize the linear regression model
+lin_reg = LinearRegression()
 
-# Create and train the SVR model
-svr_model = SVR(kernel='rbf', C=100, gamma='scale', epsilon=0.1)
-svr_model.fit(X_train, y_train)
+# Train the model
+lin_reg.fit(X_train_pca, y_train)
 
-# Make predictions on the test set
-y_pred = svr_model.predict(X_test)
+# Make predictions
+y_pred_lr = lin_reg.predict(X_test_pca)
 
 # Evaluate the model
-rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+mse_lr = mean_squared_error(y_test, y_pred_lr)
+mae_lr = mean_absolute_error(y_test, y_pred_lr)
+r2_lr = r2_score(y_test, y_pred_lr)
+
+print('Multiple Linear Regression results:')
+print("Mean Squared Error:", mse_lr)
+print("Mean Absolute Error:", mae_lr)
+print("R-squared:", r2_lr)
+
+#%%
+# Initialize the XGBoost model
+model = xgb.XGBRegressor()
+model.fit(X_train_pca, y_train)
+
+# Make predictions
+y_pred = model.predict(X_test_pca)
+
+# Evaluate the model using regression metrics
+mse = mean_squared_error(y_test, y_pred)
 mae = mean_absolute_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
 
-print('SVR RMSE:', rmse)
-print('SVR MAE:', mae)
-print('SVR R-squared:', r2)
+print('XGBoost results:')
+print("Mean Squared Error:", mse)
+print("Mean Absolute Error:", mae)
+print("R-squared:", r2)
+
+#%%
+
+gbr = GradientBoostingRegressor(n_estimators=100, random_state=42)
+gbr.fit(X_train_pca, y_train)
+
+y_pred_gbr = gbr.predict(X_test_pca)
+
+mse_gbr = mean_squared_error(y_test, y_pred_gbr)
+mae_gbr = mean_absolute_error(y_test, y_pred_gbr)
+r2_gbr = r2_score(y_test, y_pred_gbr)
+
+print('Gradient Boosting results:')
+print("Mean Squared Error:", mse_gbr)
+print("Mean Absolute Error:", mae_gbr)
+print("R-squared:", r2_gbr)
+
+#%%
+
+from sklearn.svm import SVR
+
+svr = SVR(kernel='rbf')
+svr.fit(X_train_pca, y_train)
+
+y_pred_svr = svr.predict(X_test_pca)
+
+mse_svr = mean_squared_error(y_test, y_pred_svr)
+mae_svr = mean_absolute_error(y_test, y_pred_svr)
+r2_svr = r2_score(y_test, y_pred_svr)
+
+print('Support Vector Regression results:')
+print("Mean Squared Error:", mse_svr)
+print("Mean Absolute Error:", mae_svr)
+print("R-squared:", r2_svr)
+
+#%%
+
+rf = RandomForestRegressor(n_estimators=100, random_state=42)
+rf.fit(X_train_pca, y_train)
+
+y_pred_rf = rf.predict(X_test_pca)
+
+mse_rf = mean_squared_error(y_test, y_pred_rf)
+mae_rf = mean_absolute_error(y_test, y_pred_rf)
+r2_rf = r2_score(y_test, y_pred_rf)
+
+print('Random Forest results:')
+print("Mean Squared Error:", mse_rf)
+print("Mean Absolute Error:", mae_rf)
+print("R-squared:", r2_rf)
+
+#%%
+
+# Train the MLP model on the cleaned data
+mlp_cleaned = MLPRegressor(hidden_layer_sizes=(50, 30), activation='relu', max_iter=1000, random_state=42)
+mlp_cleaned.fit(X_train_pca, y_train)
+
+# Make predictions
+y_pred_cleaned = mlp_cleaned.predict(X_test_pca)
+
+# Evaluate the model
+mse_cleaned = mean_squared_error(y_test, y_pred_cleaned)
+r2_cleaned = r2_score(y_test, y_pred_cleaned)
+
+print('MLP results:')
+print(f"Mean Squared Error: {mse_cleaned}")
+print(f"R-squared: {r2_cleaned}")
+
+
+
+
+#%%
 
 #%%

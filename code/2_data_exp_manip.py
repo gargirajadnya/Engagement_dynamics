@@ -46,15 +46,37 @@ print(missing_values)
 food_df['eng_met'] = np.nan_to_num(food_df['eng_met'], nan=0)
 
 #%%
-#unique values in some particular cols
+#let's drop unnecessary columns
+cols_drop = ['node_comments_disabled', 'node_typename', 'node_id', 'raw_caption',
+       'shortcode', 'timestamp','node_edge_media_preview_like_count',
+       'node_owner_id', 'node_thumbnail_src', 'node_thumbnail_resources_0_src',
+       'node_thumbnail_resources_0_config_width',
+       'node_thumbnail_resources_0_config_height',
+       'node_thumbnail_resources_1_src',
+       'node_thumbnail_resources_1_config_width',
+       'node_thumbnail_resources_1_config_height',
+       'node_thumbnail_resources_2_src',
+       'node_thumbnail_resources_2_config_width',
+       'node_thumbnail_resources_2_config_height',
+       'node_thumbnail_resources_3_src',
+       'node_thumbnail_resources_3_config_width',
+       'node_thumbnail_resources_3_config_height',
+       'node_thumbnail_resources_4_src',
+       'node_thumbnail_resources_4_config_width',
+       'node_thumbnail_resources_4_config_height', 'node_is_video',
+       'node_accessibility_caption', 'node_product_type',
+       'node_video_view_count', 'hashtags', 'caption','sharpn']
+
+food_df = food_df.drop(columns = cols_drop)
 
 # %%
 # Select specific columns for correlation, if needed
-col_int = ['sharpness', 'colorfulness', 'depth',  'hue', 'saturation', 'brightness', 'dim_w', 'dim_h', 'rule_of_thirds_x','rule_of_thirds_y', 'symmetry_score', 'tone', 'center_score', 'mean_rgb', 'lines_count', 'eng_met'] 
-
 num_f = food_df.select_dtypes(include=[np.number]).columns.tolist()
 
 print("Numerical Features:", num_f)
+
+col_int = ['dim_h', 'dim_w', 'sharpness', 'exposure', 'brilliance', 'colorfulness', 'highlights', 'vibrancy', 'warmth', 'tint', 'definition', 'noise_reduction', 'vignette', 'tone', 'depth', 'shadows', 'contrast','black_point', 'mean_rgb', 'hue', 'saturation', 'brightness', 'symmetry_score', 'center_score', 'lines_count'] 
+
 
 correlation_matrix = food_df[col_int].corr()
 

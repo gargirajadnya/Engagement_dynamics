@@ -186,7 +186,17 @@ sampled_images_df.shape
 #ENGAGEMENT METRICS
 
 #creating engagement metric
-sampled_images_df['eng_met'] = (sampled_images_df['like_count'] + (2 * sampled_images_df['comment_count'])).round(2)
+# sampled_images_df['eng_met'] = (sampled_images_df['like_count'] + (2 * sampled_images_df['comment_count'])).round(2)
+# Step 1: Calculate eng_met_raw as the sum of likes and comments
+sampled_images_df['eng_met'] = sampled_images_df['like_count'] + sampled_images_df['comment_count']
+
+# Step 2: Calculate min and max of eng_met_raw
+min_eng_met_raw = sampled_images_df['eng_met'].min()
+max_eng_met_raw = sampled_images_df['eng_met'].max()
+
+# Step 3: Apply min-max scaling to normalize eng_met_raw between 1 and 100
+sampled_images_df['eng_met_scaled'] = (sampled_images_df['eng_met'] - min_eng_met_raw) / (max_eng_met_raw - min_eng_met_raw) * (100 - 1) + 1
+
 
 sampled_images_df.head()
 
@@ -539,7 +549,7 @@ for idx, row in sampled_images_df.iterrows():
     image_path = os.path.join("/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/code/saved_images", f"{shortcode}.jpg")
     image = Image.open(image_path)
     # image = download_image(image_url)
-    
+
     if image:
         print(f"Processing image {shortcode}")
         sharpness = calculate_sharpness(image)

@@ -115,16 +115,6 @@ loss = model.evaluate(X_test_combined, y_test)
 print(f'Test Loss: {loss}')
 
 
-
-
-
-
-
-
-
-
-
-
 # #%%
 # #loading libraries
 # #basic

@@ -35,7 +35,7 @@ from collections import Counter
 from sklearn.cluster import KMeans
 
 #%%
-directory_path = '/Users/rajnavalakha/Documents/Engagement_dynamics/data'
+directory_path = '/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/raw_data'
 
 def sort_key(raw):
     return int(raw.split('_')[1].split('.')[0])
@@ -757,6 +757,6 @@ final_df.head()
 
 # %%
 #saving as csv
-final_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/eng_met.csv', index=False)
+final_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/processed_data.csv', index=False)
 
 #%%

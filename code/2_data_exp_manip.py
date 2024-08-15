@@ -24,19 +24,20 @@ import xgboost as xgb
 from sklearn.svm import SVR
 from sklearn.linear_model import LinearRegression
 from sklearn.neural_network import MLPRegressor
-from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
-
+from tensorflow.keras.optimizers import Adam
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 #metrics
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 #%%
 # Load your DataFrame
-food_df = pd.read_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/eng_met.csv')
+food_df = pd.read_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/processed_data.csv')
 food_df.head()
 
 #%%
@@ -301,6 +302,59 @@ print("Mean Absolute Error:", mae_lr)
 print("R-squared:", r2_lr)
 
 #%%
+svr = SVR(kernel='rbf')
+svr.fit(X_train_pca, y_train)
+
+y_pred_svr = svr.predict(X_test_pca)
+
+mse_svr = mean_squared_error(y_test, y_pred_svr)
+mae_svr = mean_absolute_error(y_test, y_pred_svr)
+r2_svr = r2_score(y_test, y_pred_svr)
+
+print('Support Vector Regression results:')
+print("Mean Squared Error:", mse_svr)
+print("Mean Absolute Error:", mae_svr)
+print("R-squared:", r2_svr)
+
+
+#%%
+# Initialize Decision Tree Regressor
+dt_regressor = DecisionTreeRegressor(max_depth=None, min_samples_split=2, min_samples_leaf=1, random_state=42)
+
+# Fit the model on the training data
+dt_regressor.fit(X_train_pca, y_train)
+
+# Predict on the test data
+y_pred_dt = dt_regressor.predict(X_test_pca)
+
+# Calculate evaluation metrics
+mse_dt = mean_squared_error(y_test, y_pred_dt)
+mae_dt = mean_absolute_error(y_test, y_pred_dt)
+r2_dt = r2_score(y_test, y_pred_dt)
+
+# Print the results
+print('Decision Tree Regression results:')
+print("Mean Squared Error:", mse_dt)
+print("Mean Absolute Error:", mae_dt)
+print("R-squared:", r2_dt)
+
+#%%
+# Random Forest 
+rf = RandomForestRegressor(n_estimators=100, random_state=42)
+rf.fit(X_train_pca, y_train)
+
+y_pred_rf = rf.predict(X_test_pca)
+
+mse_rf = mean_squared_error(y_test, y_pred_rf)
+mae_rf = mean_absolute_error(y_test, y_pred_rf)
+r2_rf = r2_score(y_test, y_pred_rf)
+
+print('Random Forest results:')
+print("Mean Squared Error:", mse_rf)
+print("Mean Absolute Error:", mae_rf)
+print("R-squared:", r2_rf)
+
+#%%
 # Initialize the XGBoost model
 model = xgb.XGBRegressor()
 model.fit(X_train_pca, y_train)
@@ -319,51 +373,105 @@ print("Mean Absolute Error:", mae)
 print("R-squared:", r2)
 
 #%%
+#CNN
+# # Example image dimensions
+# img_height, img_width = 128, 128  # Adjust based on your images
+# num_channels = 3  # RGB images
 
-gbr = GradientBoostingRegressor(n_estimators=100, random_state=42)
-gbr.fit(X_train_pca, y_train)
+# # Create a CNN model
+# model = Sequential([
+#     # Convolutional layer
+#     Conv2D(32, (3, 3), activation='relu', input_shape=(img_height, img_width, num_channels)),
+#     MaxPooling2D(pool_size=(2, 2)),
+    
+#     Conv2D(64, (3, 3), activation='relu'),
+#     MaxPooling2D(pool_size=(2, 2)),
+    
+#     Conv2D(128, (3, 3), activation='relu'),
+#     MaxPooling2D(pool_size=(2, 2)),
+    
+#     # Flatten the output from the convolutional layers
+#     Flatten(),
+    
+#     # Fully connected layers
+#     Dense(128, activation='relu'),
+#     Dense(1)  # Output layer for regression
+# ])
 
-y_pred_gbr = gbr.predict(X_test_pca)
+# # Compile the model
+# model.compile(optimizer=Adam(learning_rate=0.001),
+#               loss='mean_squared_error',
+#               metrics=['mean_absolute_error'])
 
-mse_gbr = mean_squared_error(y_test, y_pred_gbr)
-mae_gbr = mean_absolute_error(y_test, y_pred_gbr)
-r2_gbr = r2_score(y_test, y_pred_gbr)
+# # Train the model
+# history = model.fit(X_train_pca, y_train, 
+#                     epochs=10,  # Adjust number of epochs as needed
+#                     batch_size=32,  # Adjust batch size as needed
+#                     validation_data=(X_test_pca, y_test))
 
-print('Gradient Boosting results:')
-print("Mean Squared Error:", mse_gbr)
-print("Mean Absolute Error:", mae_gbr)
-print("R-squared:", r2_gbr)
+# # Evaluate the model
+# y_pred_cnn = model.predict(X_test_pca)
 
-#%%
+# # Calculate evaluation metrics
+# mse_cnn = mean_squared_error(y_test, y_pred_cnn)
+# mae_cnn = mean_absolute_error(y_test, y_pred_cnn)
+# r2_cnn = r2_score(y_test, y_pred_cnn)
 
-svr = SVR(kernel='rbf')
-svr.fit(X_train_pca, y_train)
+# # Print the results
+# print('CNN Regression results:')
+# print("Mean Squared Error:", mse_cnn)
+# print("Mean Absolute Error:", mae_cnn)
+# print("R-squared:", r2_cnn)
 
-y_pred_svr = svr.predict(X_test_pca)
+# %%
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
-mse_svr = mean_squared_error(y_test, y_pred_svr)
-mae_svr = mean_absolute_error(y_test, y_pred_svr)
-r2_svr = r2_score(y_test, y_pred_svr)
+# Example feature dimensions
+input_dim = X_train_pca.shape[1]  # Number of features
 
-print('Support Vector Regression results:')
-print("Mean Squared Error:", mse_svr)
-print("Mean Absolute Error:", mae_svr)
-print("R-squared:", r2_svr)
+# Create an MLP model
+model = Sequential([
+    # Input layer
+    Dense(128, activation='relu', input_shape=(input_dim,)),
+    Dropout(0.2),  # Dropout layer to prevent overfitting
+    
+    # Hidden layers
+    Dense(64, activation='relu'),
+    Dropout(0.2),
+    
+    Dense(32, activation='relu'),
+    Dropout(0.2),
+    
+    # Output layer
+    Dense(1)  # Output layer for regression
+])
 
-#%%
+# Compile the model
+model.compile(optimizer='adam',
+              loss='mean_squared_error',
+              metrics=['mean_absolute_error'])
 
-rf = RandomForestRegressor(n_estimators=100, random_state=42)
-rf.fit(X_train_pca, y_train)
+# Train the model
+history = model.fit(X_train_pca, y_train, 
+                    epochs=500,  # Adjust the number of epochs as needed
+                    batch_size=32,  # Adjust batch size as needed
+                    validation_data=(X_test_pca, y_test))
 
-y_pred_rf = rf.predict(X_test_pca)
+# Evaluate the model
+y_pred_mlp = model.predict(X_test_pca)
 
-mse_rf = mean_squared_error(y_test, y_pred_rf)
-mae_rf = mean_absolute_error(y_test, y_pred_rf)
-r2_rf = r2_score(y_test, y_pred_rf)
+# Calculate evaluation metrics
+mse_mlp = mean_squared_error(y_test, y_pred_mlp)
+mae_mlp = mean_absolute_error(y_test, y_pred_mlp)
+r2_mlp = r2_score(y_test, y_pred_mlp)
 
-print('Random Forest results:')
-print("Mean Squared Error:", mse_rf)
-print("Mean Absolute Error:", mae_rf)
-print("R-squared:", r2_rf)
+# Print the results
+print('MLP Regression results:')
+print("Mean Squared Error:", mse_mlp)
+print("Mean Absolute Error:", mae_mlp)
+print("R-squared:", r2_mlp)
 
 # %%

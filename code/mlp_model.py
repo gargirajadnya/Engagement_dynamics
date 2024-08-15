@@ -1,84 +1,117 @@
 #%%
-# with the new data for checking the efficiency of the model. Timestamp 
-# %%
+#loading libraries
+#basic
 import pandas as pd
 import numpy as np
+
+#standardization
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
+
+#splitting data
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error
+
+#metrics
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+
+#mlp
 import requests
 from PIL import Image
 from io import BytesIO
 from tqdm import tqdm
 import tensorflow as tf
 from tensorflow.keras import layers, models
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.applications.resnet50 import preprocess_input
+from tensorflow.keras.applications.resnet50 import ResNet50
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
 
 #%%
-# Load the data
-data = pd.read_csv('/Users/rajnavalakha/Documents/Final Sem Project UCD/Mock Data/eng_met.csv')
+#read model data
+#without outlier/sampling
+food_df = pd.read_csv('/Users/rajnavalakha/Documents/Final Sem Project UCD/Mock Data/eng_met.csv')
 
-numerical_cols = data.select_dtypes(include=[np.number]).columns
-data[numerical_cols] = data[numerical_cols].replace([np.inf, -np.inf], np.nan)
+#%%
+#------------------------------------------------------------------------
 
-# Optionally, print the rows with NaNs to inspect
-print("Rows with NaN values:\n", data[numerical_cols].isnull().sum())
+#%%
+col_int = ['dim_h', 'dim_w', 'colorfulness', 'brightness', 
+           'symmetry_score', 'center_score', 'eng_met']
 
-# Fill or drop NaN values as appropriate
-# For example, fill NaNs with the mean of the column
-data[numerical_cols] = data[numerical_cols].fillna(data[numerical_cols].mean())
+# Extract numerical features and target variable
+X_num = food_df[col_int[:-1]]  # All columns except the target
+y = food_df['eng_met']
+
+#%%
+# Standardize numerical features
 scaler = StandardScaler()
-data[numerical_cols] = scaler.fit_transform(data[numerical_cols])
+X_num_scaled = scaler.fit_transform(X_num)
 
 #%%
-# Function to download and process images
-def fetch_image(url):
+# Split the dataset
+X_train_num, X_test_num, y_train, y_test = train_test_split(X_num_scaled, y, test_size=0.2, random_state=42)
+
+#%%
+# Load pre-trained ResNet50 model for feature extraction
+base_model = ResNet50(weights='imagenet', include_top=False, pooling='avg')
+
+#%%
+# Function to preprocess and extract features from an image URL
+def extract_features(img_url, model):
     try:
-        response = requests.get(url)
-        img = Image.open(BytesIO(response.content))
-        img = img.resize((128, 128))  # Resize for consistency
-        return np.array(img) / 255.0  # Normalize pixel values
-    except:
-        return None
+        # Download the image
+        response = requests.get(img_url)
+        img = image.load_img(BytesIO(response.content), target_size=(224, 224))  # Resize to match model input size
+        
+        # Convert the image to an array
+        img_array = image.img_to_array(img)
+        img_array = np.expand_dims(img_array, axis=0)
+        img_array = preprocess_input(img_array)
+        
+        # Extract features
+        features = model.predict(img_array)
+        return features.flatten()
+    except Exception as e:
+        print(f"Failed to process image {img_url}: {e}")
+        return np.zeros(model.output_shape[1])  # Return a zero array if the image can't be processed
 
 #%%
-# Apply the image processing function to the 'display_url' column
-data['image_data'] = data['display_url'].apply(fetch_image)
+# Extract features for all images
+image_features = np.array([extract_features(url, base_model) for url in food_df['display_url']])
 
-# Drop rows where image fetching failed
-data = data.dropna(subset=['image_data'])
+#%%
+# Split image features into training and testing sets, ensuring the same indices as the numerical data
+X_train_img, X_test_img = train_test_split(image_features, test_size=0.2, random_state=42)
 
-# Prepare image data for the model
-image_data = np.stack(data['image_data'].values)
+#%%
+# Combine numerical and image features for training and testing sets
+X_train_combined = np.hstack((X_train_num, X_train_img))
+X_test_combined = np.hstack((X_test_num, X_test_img))
 
 #%%
 # Define the MLP model
-model = models.Sequential([
-    layers.Flatten(input_shape=(128, 128, 3)),
-    layers.Dense(128, activation='relu'),
-    layers.Dense(64, activation='relu'),
-    layers.Dense(1)  # Adjust the output layer based on your prediction task
+model = Sequential([
+    Dense(128, activation='relu', input_shape=(X_train_combined.shape[1],)),
+    Dropout(0.5),
+    Dense(64, activation='relu'),
+    Dropout(0.5),
+    Dense(1)  # Output layer for regression
 ])
 
+# Compile the model
 model.compile(optimizer='adam', loss='mean_squared_error')
 
-#%%
-# Split data into features and labels
-X = image_data
-y = data['eng_met']  # Replace 'target_column' with the actual column name
-
-# Split into train and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 #%%
 # Train the model
-model.fit(X_train, y_train, epochs=10, batch_size=32, validation_split=0.2)
-
-# Evaluate the model
-predictions = model.predict(X_test)
-mse = mean_squared_error(y_test, predictions)
-mean_adjusted_error = np.sqrt(mse)
+history = model.fit(X_train_combined, y_train, epochs=500, batch_size=32, validation_split=0.1)
 
 #%%
-print('Mean Adjusted Error:', mean_adjusted_error)
-print('Mean squared error', mse)
-# %%
+# Evaluate on the test set
+loss = model.evaluate(X_test_combined, y_test)
+print(f'Test Loss: {loss}')
+
+#%%

@@ -204,14 +204,14 @@ sampled_images_df.shape
 #%%
 #Image recognition and aesthetics
 # Function to download an image from a URL
-def download_image(url):
-    try:
-        response = requests.get(url, timeout=5)
-        response.raise_for_status()
-        return Image.open(BytesIO(response.content))
-    except requests.exceptions.RequestException as e:
-        print(f"Failed to download {url}: {e}")
-        return None
+# def download_image(url):
+#     try:
+#         response = requests.get(url, timeout=5)
+#         response.raise_for_status()
+#         return Image.open(BytesIO(response.content))
+#     except requests.exceptions.RequestException as e:
+#         print(f"Failed to download {url}: {e}")
+#         return None
 
 #save images
 #------
@@ -250,19 +250,17 @@ def download_image(url):
 # Apply the download_image function to each URL in the 'display_url' column
 # sampled_images_df_copy['image'] = sampled_images_df['display_url'].apply(download_image)
 
-#call images
-# from PIL import Image
-# import numpy as np
-
+#%%
+# call images
 # def load_image(image_path):
 #     image = Image.open(image_path)
-#     image = image.resize((224, 224))  # Resize image if needed
-#     image_array = np.array(image)  # Convert image to numpy array
+#     # image = image.resize((224, 224))  
+#     image_array = np.array(image) 
 #     return image_array
 
 # # Example usage:
 # image_array = load_image("saved_images/example.jpg")
-# # Now you can use `image_array` for prediction in your model
+# Now you can use `image_array` for prediction in your model
 
 #%%
 # Function to detect the language
@@ -538,9 +536,12 @@ results_list = []
 for idx, row in sampled_images_df.iterrows():
     shortcode = row['shortcode']
     caption = row['caption']
-    image_url = row['display_url']
+    # image_url = row['display_url']
+    # Load the saved image
+    image_path = os.path.join("/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/code/saved_images", f"{shortcode}.jpg")
+    image = Image.open(image_path)
+    # image = download_image(image_url)
     
-    image = download_image(image_url)
     if image:
         print(f"Processing image {shortcode}")
         sharpness = calculate_sharpness(image)

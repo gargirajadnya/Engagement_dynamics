@@ -51,7 +51,7 @@ food_df['eng_met'] = np.nan_to_num(food_df['eng_met'], nan=0)
 #%%
 #let's drop unnecessary columns
 cols_drop = ['node_comments_disabled', 'node_typename', 'node_id', 'raw_caption',
-       'shortcode', 'timestamp','node_edge_media_preview_like_count',
+     'timestamp','node_edge_media_preview_like_count',
        'node_owner_id', 'node_thumbnail_src', 'node_thumbnail_resources_0_src',
        'node_thumbnail_resources_0_config_width',
        'node_thumbnail_resources_0_config_height',

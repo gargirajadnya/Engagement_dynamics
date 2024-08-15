@@ -39,11 +39,10 @@ food_df = pd.read_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/M
 
 #%%
 col_int = ['dim_h', 'dim_w', 'brilliance', 'colorfulness', 'vibrancy', 'tint', 
-           'definition', 'vignette', 'tone', 'depth', 'contrast', 'brightness', 
-           'symmetry_score', 'center_score', 'eng_met']
+           'definition', 'vignette', 'tone', 'depth', 'contrast', 'brightness', 'symmetry_score', 'center_score', 'eng_met']
 
 # Extract numerical features and target variable
-X_num = food_df[col_int[:-1]]  # All columns except the target
+X_num = food_df[col_int[:-1]] 
 y = food_df['eng_met']
 
 #%%

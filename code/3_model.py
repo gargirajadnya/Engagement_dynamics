@@ -117,7 +117,9 @@ print("Mean Absolute Error:", mae_lr)
 print("R-squared:", r2_lr)
 
 #%%
-svr = SVR(kernel='rbf')
+svr = SVR(kernel='rbf'
+        #   , gamma = 0.15
+          )
 svr.fit(X_train_pca, y_train)
 
 y_pred_svr = svr.predict(X_test_pca)

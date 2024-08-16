@@ -9,6 +9,12 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 import statsmodels.api as sm
 from scipy.stats import ttest_ind
 
+#plots
+import seaborn as sns
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
 #standardization
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
@@ -94,6 +100,28 @@ sns.heatmap(correlation_matrix, annot=True, cmap=mako_cmap)
 plt.title('Correlation Heatmap with Mako Colormap')
 plt.show()
 
+
+#scatter plot to check if there is any linear relationship between the target variable and predictors
+
+# List of columns you're interested in
+pred = ['dim_h', 'dim_w', 'brilliance', 'colorfulness', 'vibrancy', 'tint', 'definition', 'vignette', 'tone', 'depth', 'contrast', 'brightness', 'symmetry_score', 'center_score']
+target = 'eng_met'
+
+# Initialize PairGrid
+g = sns.PairGrid(food_df, y_vars=[target], x_vars=pred, height=2.5, aspect=1.0)
+
+# Map a scatterplot on the grid
+g.map(sns.scatterplot)
+
+# Optionally, add regression lines to the plots
+g.map(sns.regplot, scatter_kws={'alpha':0.5}, line_kws={'color':'red'}, ci=None)
+
+# Add titles
+for ax, col in zip(g.axes.flat, pred):
+    ax.set_title(col)
+
+# Show the plot
+plt.show()
 
 #%%
 
@@ -303,7 +331,9 @@ print("Mean Absolute Error:", mae_lr)
 print("R-squared:", r2_lr)
 
 #%%
-svr = SVR(kernel='rbf')
+svr = SVR(kernel='rbf'
+          , gamma = 0.15
+         )
 svr.fit(X_train_pca, y_train)
 
 y_pred_svr = svr.predict(X_test_pca)

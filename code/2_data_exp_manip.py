@@ -30,6 +30,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.layers import Dense, Dropout
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 #metrics
@@ -424,50 +425,50 @@ print("R-squared:", r2)
 # print("R-squared:", r2_cnn)
 
 # %%
+# #MLP
+# # Example feature dimensions
+# input_dim = X_train_pca.shape[1]  # Number of features
 
-# Example feature dimensions
-input_dim = X_train_pca.shape[1]  # Number of features
-
-# Create an MLP model
-model = Sequential([
-    # Input layer
-    Dense(128, activation='relu', input_shape=(input_dim,)),
-    Dropout(0.2),  # Dropout layer to prevent overfitting
+# # Create an MLP model
+# model = Sequential([
+#     # Input layer
+#     Dense(128, activation='relu', input_shape=(input_dim,)),
+#     Dropout(0.2),  # Dropout layer to prevent overfitting
     
-    # Hidden layers
-    Dense(64, activation='relu'),
-    Dropout(0.2),
+#     # Hidden layers
+#     Dense(64, activation='relu'),
+#     Dropout(0.2),
     
-    Dense(32, activation='relu'),
-    Dropout(0.2),
+#     Dense(32, activation='relu'),
+#     Dropout(0.2),
     
-    # Output layer
-    Dense(1)  # Output layer for regression
-])
+#     # Output layer
+#     Dense(1)  # Output layer for regression
+# ])
 
-# Compile the model
-model.compile(optimizer='adam',
-              loss='mean_squared_error',
-              metrics=['mean_absolute_error'])
+# # Compile the model
+# model.compile(optimizer='adam',
+#               loss='mean_squared_error',
+#               metrics=['mean_absolute_error'])
 
-# Train the model
-history = model.fit(X_train_pca, y_train, 
-                    epochs=500,  # Adjust the number of epochs as needed
-                    batch_size=32,  # Adjust batch size as needed
-                    validation_data=(X_test_pca, y_test))
+# # Train the model
+# history = model.fit(X_train_pca, y_train, 
+#                     epochs=500,  # Adjust the number of epochs as needed
+#                     batch_size=32,  # Adjust batch size as needed
+#                     validation_data=(X_test_pca, y_test))
 
-# Evaluate the model
-y_pred_mlp = model.predict(X_test_pca)
+# # Evaluate the model
+# y_pred_mlp = model.predict(X_test_pca)
 
-# Calculate evaluation metrics
-mse_mlp = mean_squared_error(y_test, y_pred_mlp)
-mae_mlp = mean_absolute_error(y_test, y_pred_mlp)
-r2_mlp = r2_score(y_test, y_pred_mlp)
+# # Calculate evaluation metrics
+# mse_mlp = mean_squared_error(y_test, y_pred_mlp)
+# mae_mlp = mean_absolute_error(y_test, y_pred_mlp)
+# r2_mlp = r2_score(y_test, y_pred_mlp)
 
-# Print the results
-print('MLP Regression results:')
-print("Mean Squared Error:", mse_mlp)
-print("Mean Absolute Error:", mae_mlp)
-print("R-squared:", r2_mlp)
+# # Print the results
+# print('MLP Regression results:')
+# print("Mean Squared Error:", mse_mlp)
+# print("Mean Absolute Error:", mae_mlp)
+# print("R-squared:", r2_mlp)
 
 # %%

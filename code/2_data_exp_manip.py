@@ -424,10 +424,6 @@ print("R-squared:", r2)
 # print("R-squared:", r2_cnn)
 
 # %%
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 # Example feature dimensions
 input_dim = X_train_pca.shape[1]  # Number of features

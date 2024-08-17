@@ -5,9 +5,14 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+
+#
+from scipy import stats
+from sklearn.utils import resample
 import statsmodels.api as sm
 from scipy.stats import ttest_ind
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 #plots
 import seaborn as sns
@@ -87,9 +92,10 @@ num_f = food_df.select_dtypes(include=[np.number]).columns.tolist()
 print("Numerical Features:", num_f)
 
 col_int = ['dim_h', 'dim_w', 'brilliance', 'colorfulness', 'vibrancy', 'tint', 'definition', 'vignette', 'tone', 'depth', 'contrast', 'brightness', 'symmetry_score', 'center_score', 'eng_met'] 
+corr_cols = ['dim_h', 'dim_w', 'brilliance', 'colorfulness', 'vibrancy', 'tint', 'definition', 'vignette', 'tone', 'depth', 'contrast', 'brightness', 'symmetry_score', 'center_score']
 
 
-correlation_matrix = food_df[col_int].corr()
+correlation_matrix = food_df[corr_cols].corr()
 
 # Create a colormap from the 'mako' color palette
 mako_cmap = sns.color_palette("Blues", as_cmap=True)
@@ -185,14 +191,14 @@ food_df = pd.concat([selected_df
 food_df.head()
 
 #%%
-# -------------------------------------------------------------------------
-food_df.to_csv("/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/food_df.csv")
-
 model_df = food_df.copy()
 
 # %%
-outlier_df = model_df[['dim_h', 'dim_w', 'brilliance', 'colorfulness', 'vibrancy', 'tint', 'definition', 'vignette', 'tone', 'depth', 'contrast', 'brightness', 'symmetry_score', 'center_score', 'eng_met']]
+outlier_df = model_df[['dim_h', 'dim_w', 'brilliance', 'colorfulness', 'vibrancy', 'tint', 'definition', 'vignette', 'tone', 'depth', 'contrast', 'brightness', 'symmetry_score', 'center_score'
+                       , 'eng_met'
+                       ]]
 outlier_df.shape
+
 
 #%%
 
@@ -240,265 +246,112 @@ for column_name, count in outlier_counts.items():
 print(f"Shape of DataFrame after removing outliers: {model_df.shape}")
 
 #%%
+#%%
 #DATA SAMPLING - bootstrap sampling
 # Set the target number of rows
 target_rows = 1000
 
 # Perform bootstrap sampling
-model_df = model_df.sample(n=target_rows, replace=True, random_state=1)
+bootstrapped_df = model_df.sample(n=target_rows, replace=True, random_state=1)
 
 # Save the new dataset to a CSV file
 # bootstrap_sampled_data.to_csv('expanded_model_data.csv', index=False)
 
 # Verify the shape of the new dataset
-print("Shape of augmented dataset:", model_df.shape)
-
-#%%
-#save data in csv
-model_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/bootstrapped_df.csv', index=False)
-
-#%%
-#standardizing numerical columns
-# model_df['eng_met'] = model_df['eng_met'].replace([np.inf, -np.inf], 0)
-
-X = model_df[['dim_h', 'dim_w', 'brilliance', 'colorfulness', 'vibrancy', 'tint', 'definition', 'vignette', 'tone', 'depth', 'contrast', 'brightness', 'symmetry_score', 'center_score']]
-
-y = model_df['eng_met']
-
-# Identify numerical features
-numerical_features = X.select_dtypes(include=[np.number]).columns.tolist()
-
-print("Numerical Features:", numerical_features)
-
-#%%
-#standardizing
-scaler = StandardScaler()
-X_normalized = scaler.fit_transform(X[numerical_features])
-X_normalized = pd.DataFrame(X_normalized, columns=numerical_features)
-
-X_normalized.head()
-
-#%%
-B = X[numerical_features].dropna()
-
-# Add a constant column for statsmodels
-Z = sm.add_constant(B)
-
-# Create a DataFrame to store VIF scores
-vif_data = pd.DataFrame()
-vif_data['Feature'] = Z.columns
-vif_data['VIF'] = [variance_inflation_factor(Z.values, i) for i in range(Z.shape[1])]
-
-# Drop the constant column VIF score
-vif_data = vif_data.drop(vif_data[vif_data['Feature'] == 'const'].index)
-
-vif_data[vif_data['VIF'] > 10]['Feature']
+print("Shape of augmented dataset:", bootstrapped_df.shape)
 
 
 #%%
-# #PCA
-pca = PCA()
-X_pca = pca.fit_transform(X_normalized)
-explained_variance = pca.explained_variance_ratio_
-print("Explained Variance Ratio:", explained_variance)
 
-X_selected_pca = X_pca[:, :20]
+# Copy the original DataFrame
+imb_df = food_df.copy()
 
-# %%
-#SPLITTIN
-# X_train_pca, X_test_pca, y_train, y_test = train_test_split(X_selected_pca, y, test_size=0.3, random_state=42)
+# List of predictors
+predictors = ['dim_h', 'dim_w', 'brilliance', 'colorfulness', 'vibrancy', 
+              'tint', 'definition', 'vignette', 'tone', 'depth', 
+              'contrast', 'brightness', 'symmetry_score', 'center_score']
 
-X_train_pca, X_test_pca, y_train, y_test = train_test_split(X_normalized, y, test_size=0.2, random_state=42)
+# Shape of data before outlier removal
+initial_shape = imb_df.shape
+print(f"Shape of data before outlier removal: {initial_shape}")
 
-# %%
-# Initialize the linear regression model
-lin_reg = LinearRegression()
+# Calculate Z-scores to identify outliers
+z_scores = np.abs(stats.zscore(imb_df[predictors]))
 
-# Train the model
-lin_reg.fit(X_train_pca, y_train)
+# Determine the number of outliers in each predictor
+outliers_count = (z_scores > 3).sum(axis=0)
 
-# Make predictions
-y_pred_lr = lin_reg.predict(X_test_pca)
+# Display the number of outliers for each predictor
+outliers_summary = pd.DataFrame({'Predictor': predictors, 'Outliers_Count': outliers_count})
+print("\nNumber of outliers for each predictor:")
+print(outliers_summary)
 
-# Evaluate the model
-mse_lr = mean_squared_error(y_test, y_pred_lr)
-mae_lr = mean_absolute_error(y_test, y_pred_lr)
-r2_lr = r2_score(y_test, y_pred_lr)
+# Remove outliers
+model_df_cleaned = imb_df[(z_scores < 3).all(axis=1)]
 
-print('Multiple Linear Regression results:')
-print("Mean Squared Error:", mse_lr)
-print("Mean Absolute Error:", mae_lr)
-print("R-squared:", r2_lr)
+# Shape of data after outlier removal
+final_shape = model_df_cleaned.shape
+print(f"\nShape of data after outlier removal: {final_shape}")
 
-#%%
-svr = SVR(kernel='rbf'
-          , gamma = 0.15
-         )
-svr.fit(X_train_pca, y_train)
+# Check class distribution before bootstrapping
+original_class_counts = model_df_cleaned['eng_met'].value_counts()
+print("\nClass distribution before bootstrapping:")
+print(original_class_counts)
 
-y_pred_svr = svr.predict(X_test_pca)
+# Handle class imbalance by bootstrapping minority classes
+# Find the size of the majority class
+majority_class_size = original_class_counts.max()
 
-mse_svr = mean_squared_error(y_test, y_pred_svr)
-mae_svr = mean_absolute_error(y_test, y_pred_svr)
-r2_svr = r2_score(y_test, y_pred_svr)
+# Initialize a list to store the balanced dataframes
+upsampled_dataframes = []
+new_observations_count = 0
 
-print('Support Vector Regression results:')
-print("Mean Squared Error:", mse_svr)
-print("Mean Absolute Error:", mae_svr)
-print("R-squared:", r2_svr)
+# Bootstrap each class to bring them closer to balance
+for cls in original_class_counts.index:
+    class_subset = model_df_cleaned[model_df_cleaned['eng_met'] == cls]
+    current_size = len(class_subset)
+    # If it's the majority class, keep it as it is
+    if current_size == majority_class_size:
+        upsampled_dataframes.append(class_subset)
+    else:
+        # Upsample minority class
+        upsampled_subset = resample(class_subset, 
+                                    replace=True, 
+                                    n_samples=majority_class_size,  # Upsample to match majority class size
+                                    random_state=42)
+        upsampled_dataframes.append(upsampled_subset)
+        new_observations_count += len(upsampled_subset) - current_size
 
+# Combine the original and upsampled data
+model_df_balanced = pd.concat(upsampled_dataframes)
 
-#%%
-# Initialize Decision Tree Regressor
-dt_regressor = DecisionTreeRegressor(max_depth=None, min_samples_split=2, min_samples_leaf=1, random_state=42)
+# Shuffle the balanced DataFrame
+model_df_balanced = model_df_balanced.sample(frac=1, random_state=42).reset_index(drop=True)
 
-# Fit the model on the training data
-dt_regressor.fit(X_train_pca, y_train)
+# Check the class distribution after bootstrapping
+balanced_class_counts = model_df_balanced['eng_met'].value_counts()
+print("\nClass distribution after bootstrapping:")
+print(balanced_class_counts)
 
-# Predict on the test data
-y_pred_dt = dt_regressor.predict(X_test_pca)
+# Shape of the balanced dataset
+print(f"\nShape of the balanced dataset: {model_df_balanced.shape}")
+print(f"Number of new observations added: {new_observations_count}")
 
-# Calculate evaluation metrics
-mse_dt = mean_squared_error(y_test, y_pred_dt)
-mae_dt = mean_absolute_error(y_test, y_pred_dt)
-r2_dt = r2_score(y_test, y_pred_dt)
-
-# Print the results
-print('Decision Tree Regression results:')
-print("Mean Squared Error:", mse_dt)
-print("Mean Absolute Error:", mae_dt)
-print("R-squared:", r2_dt)
-
-#%%
-# Random Forest 
-rf = RandomForestRegressor(n_estimators=100, random_state=42)
-rf.fit(X_train_pca, y_train)
-
-y_pred_rf = rf.predict(X_test_pca)
-
-mse_rf = mean_squared_error(y_test, y_pred_rf)
-mae_rf = mean_absolute_error(y_test, y_pred_rf)
-r2_rf = r2_score(y_test, y_pred_rf)
-
-print('Random Forest results:')
-print("Mean Squared Error:", mse_rf)
-print("Mean Absolute Error:", mae_rf)
-print("R-squared:", r2_rf)
 
 #%%
-# Initialize the XGBoost model
-model = xgb.XGBRegressor()
-model.fit(X_train_pca, y_train)
+# -------------------------------------------------------------------------
+#save dataframes to train models according to needs
+#original
+food_df.to_csv("/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/food_df.csv")
 
-# Make predictions
-y_pred = model.predict(X_test_pca)
+#no outliers
+model_df.to_csv("/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/model_df.csv")
 
-# Evaluate the model using regression metrics
-mse = mean_squared_error(y_test, y_pred)
-mae = mean_absolute_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
+#bootstrapping
+bootstrapped_df.to_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/bootstrapped_df.csv', index=False)
 
-print('XGBoost results:')
-print("Mean Squared Error:", mse)
-print("Mean Absolute Error:", mae)
-print("R-squared:", r2)
+#outliers-preds, class imbalance- handling
+model_df_balanced.to_csv("/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/model_df_balanced.csv")
+
 
 #%%
-#CNN
-# # Example image dimensions
-# img_height, img_width = 128, 128  # Adjust based on your images
-# num_channels = 3  # RGB images
-
-# # Create a CNN model
-# model = Sequential([
-#     # Convolutional layer
-#     Conv2D(32, (3, 3), activation='relu', input_shape=(img_height, img_width, num_channels)),
-#     MaxPooling2D(pool_size=(2, 2)),
-    
-#     Conv2D(64, (3, 3), activation='relu'),
-#     MaxPooling2D(pool_size=(2, 2)),
-    
-#     Conv2D(128, (3, 3), activation='relu'),
-#     MaxPooling2D(pool_size=(2, 2)),
-    
-#     # Flatten the output from the convolutional layers
-#     Flatten(),
-    
-#     # Fully connected layers
-#     Dense(128, activation='relu'),
-#     Dense(1)  # Output layer for regression
-# ])
-
-# # Compile the model
-# model.compile(optimizer=Adam(learning_rate=0.001),
-#               loss='mean_squared_error',
-#               metrics=['mean_absolute_error'])
-
-# # Train the model
-# history = model.fit(X_train_pca, y_train, 
-#                     epochs=10,  # Adjust number of epochs as needed
-#                     batch_size=32,  # Adjust batch size as needed
-#                     validation_data=(X_test_pca, y_test))
-
-# # Evaluate the model
-# y_pred_cnn = model.predict(X_test_pca)
-
-# # Calculate evaluation metrics
-# mse_cnn = mean_squared_error(y_test, y_pred_cnn)
-# mae_cnn = mean_absolute_error(y_test, y_pred_cnn)
-# r2_cnn = r2_score(y_test, y_pred_cnn)
-
-# # Print the results
-# print('CNN Regression results:')
-# print("Mean Squared Error:", mse_cnn)
-# print("Mean Absolute Error:", mae_cnn)
-# print("R-squared:", r2_cnn)
-
-# %%
-# #MLP
-# # Example feature dimensions
-# input_dim = X_train_pca.shape[1]  # Number of features
-
-# # Create an MLP model
-# model = Sequential([
-#     # Input layer
-#     Dense(128, activation='relu', input_shape=(input_dim,)),
-#     Dropout(0.2),  # Dropout layer to prevent overfitting
-    
-#     # Hidden layers
-#     Dense(64, activation='relu'),
-#     Dropout(0.2),
-    
-#     Dense(32, activation='relu'),
-#     Dropout(0.2),
-    
-#     # Output layer
-#     Dense(1)  # Output layer for regression
-# ])
-
-# # Compile the model
-# model.compile(optimizer='adam',
-#               loss='mean_squared_error',
-#               metrics=['mean_absolute_error'])
-
-# # Train the model
-# history = model.fit(X_train_pca, y_train, 
-#                     epochs=500,  # Adjust the number of epochs as needed
-#                     batch_size=32,  # Adjust batch size as needed
-#                     validation_data=(X_test_pca, y_test))
-
-# # Evaluate the model
-# y_pred_mlp = model.predict(X_test_pca)
-
-# # Calculate evaluation metrics
-# mse_mlp = mean_squared_error(y_test, y_pred_mlp)
-# mae_mlp = mean_absolute_error(y_test, y_pred_mlp)
-# r2_mlp = r2_score(y_test, y_pred_mlp)
-
-# # Print the results
-# print('MLP Regression results:')
-# print("Mean Squared Error:", mse_mlp)
-# print("Mean Absolute Error:", mae_mlp)
-# print("R-squared:", r2_mlp)
-
-# %%

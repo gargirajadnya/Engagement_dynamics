@@ -350,7 +350,7 @@ plt.xticks(rotation=45, fontsize=14, color='#4A4A4A', fontweight='bold')
 plt.yticks(fontsize=14, color='#4A4A4A', fontweight='bold')
 
 # Adjust the y-axis limits to zoom in on the R^2 values
-plt.ylim(-1, 0.5)  # Adjust based on the range of your R^2 values
+# plt.ylim(-1, 0.5)  
 
 # Add gridlines with custom styling
 plt.grid(True, which='both', linestyle='--', linewidth=0.7, color='gray', alpha=0.7)

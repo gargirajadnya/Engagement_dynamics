@@ -242,7 +242,7 @@ model = Sequential([
 ])
 
 # Compile the model
-model.compile(optimizer=Adam(learning_rate=0.02),  
+model.compile(optimizer=Adam(learning_rate=0.01),  
               loss='mean_squared_error',
               metrics=['mean_absolute_error'])
 

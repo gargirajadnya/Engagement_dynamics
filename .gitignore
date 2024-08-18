@@ -25,3 +25,11 @@ presentation:info/Lit review.pptx
 /.jpg
 code/saved_images
 /.pptx
+# Ignore PowerPoint files
+*.pptx
+
+# Ignore CSV files
+*.csv
+
+# Ignore JPEG images
+*.jpg

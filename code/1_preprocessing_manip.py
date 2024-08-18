@@ -185,7 +185,7 @@ min_eng_met_raw = sampled_images_df['eng_met_base'].min()
 max_eng_met_raw = sampled_images_df['eng_met_base'].max()
 
 #min-max scaling to normalize eng_met_raw between 1 and 100
-sampled_images_df['eng_met'] = (sampled_images_df['eng_met_base'] - min_eng_met_raw) / (max_eng_met_raw - min_eng_met_raw) * (100 - 1) + 1
+sampled_images_df['eng_met_scaled'] = (sampled_images_df['eng_met_base'] - min_eng_met_raw) / (max_eng_met_raw - min_eng_met_raw) * (100 - 1) + 1
 
 sampled_images_df.head()
 

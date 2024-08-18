@@ -35,95 +35,89 @@ from collections import Counter
 from sklearn.cluster import KMeans
 
 #%%
+#path
 directory_path = '/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/raw_data'
 
 def sort_key(raw):
     return int(raw.split('_')[1].split('.')[0])
 
-# Get a list of all CSV files in the directory and sort them using the custom key
+#list of all CSV files in the directory and using the custom key
 csv_files = sorted([file for file in os.listdir(directory_path) if file.endswith('.csv')], key=sort_key)
 
-#%% Read and concatenate all CSV files
+#%%
+#read and concatenate all CSV files
 sampled_images_df = pd.concat([pd.read_csv(os.path.join(directory_path, file)) for file in csv_files], ignore_index=True)
-
-#%%load follower data
-follower_df = pd.read_csv('/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/data/followers.csv')
 
 #%%
 #drop duplicates
 sampled_images_df = sampled_images_df.drop_duplicates(subset='node/shortcode')
 sampled_images_df.shape
-
-#%%
-# Merging both dataframes on shortcode
-# sampled_images_df = pd.merge(sampled_images_df, follower_df, on='node/shortcode')
 sampled_images_df.head()
 
 
 #%%
 #prepare the column names
 def prep_colnames(my_df):
-    # Make a copy of the dataframe
     my_df = pd.DataFrame(my_df).copy()
 
-    # Get the column names and process them
+    #column names
     col_names = list(my_df.columns)
-    col_names = [str(x).strip() for x in col_names]  # Strip whitespace
-    col_names = [str(x).lower() for x in col_names]  # Lowercase
+    #whitespace
+    col_names = [str(x).strip() for x in col_names]
+    #lowercase
+    col_names = [str(x).lower() for x in col_names]
 
-    # Replace punctuation/spaces with _
+    #replace punctuation/spaces with _
     str_lookup = "_" * len(string.punctuation + string.whitespace)
     trans_table = str.maketrans(string.punctuation + string.whitespace, str_lookup, "")
     col_names = [x.translate(trans_table) for x in col_names]
 
-    # Remove trailing and leading "_"
+    #remove trailing and leading "_"
     col_names = [x.strip("_") for x in col_names]
 
-    # Remove multiple "_"
+    #remove multiple "_"
     col_names = [re.sub(pattern="_+", repl="_", string=x) for x in col_names]
 
-    # Assign the processed column names back to the dataframe
+    #assign the processed column names back to the dataframe
     my_df.columns = col_names
 
     return my_df
 
 #%%
-# Function to extract terms beginning with "#"
+#function to extract terms beginning with "#"
 def extract_hashtags(text):
     if not isinstance(text, str):
-        return []  # Or handle this case as appropriate
+        return []
     return re.findall(r'#\w+', text)
 
 #%%
-# Function to extract clean text
+#function to extract clean text
 def clean_text(text):
     if not isinstance(text, str):
-        return ''  # or handle it in another appropriate way
-    # Example cleaning process (customize as needed)
-    text = text.lower()  # convert to lowercase
-    text = re.sub(r'http\S+', '', text)  # remove URLs
-    text = re.sub(r'@\w+', '', text)  # remove mentions
-    text = re.sub(r'#\w+', '', text)  # remove hashtags
-    text = re.sub(r'[^a-zA-Z\s]', '', text)  # remove punctuation
-    text = text.strip()  # remove leading and trailing whitespace
+        return ''  
+    #lowercase    
+    text = text.lower()  
+    #url remove
+    text = re.sub(r'http\S+', '', text)
+    #mentions remove
+    text = re.sub(r'@\w+', '', text)
+    #hashtags remove 
+    text = re.sub(r'#\w+', '', text)
+    #punctuation remove
+    text = re.sub(r'[^a-zA-Z\s]', '', text)
+    #leading and trailing whitespace
+    text = text.strip()
     return text
 
 def clean_hashtags(text):
-    # Remove specific unwanted sequences
     text = re.sub(r'#ÿ™|#Âπ≥|#–∫–æ|#–∫|#–≤|#–Ω|#Îπµ', '', text)
-    
-    # Remove extra # that do not have text following them
     text = re.sub(r'#\s*', '#', text)
-    
-    # Remove any leading, trailing, or multiple spaces
     text = re.sub(r'\s+', ' ', text).strip()
-    
-    # Remove multiple consecutive # characters
     text = re.sub(r'#+', '#', text)
     
     return text
 
-# Function to fix encoding with error handling
+#function to fix encoding with error handling
 def fix_encoding(text):
     return text.encode('latin1', errors='ignore').decode('utf-8', errors='ignore')
 
@@ -133,7 +127,7 @@ sampled_images_df = prep_colnames(sampled_images_df)
 sampled_images_df.head()
 
 #%% 
-# Rename selected columns
+#rename selected columns
 rename_dict = {
     'node_shortcode': 'shortcode',
     'node_edge_liked_by_count': 'like_count',
@@ -148,7 +142,7 @@ sampled_images_df.rename(columns=rename_dict, inplace=True)
 
 
 #%%
-# Apply the function to the 'text' column and create a new column with the extracted hashtags
+#apply the functions
 sampled_images_df['hashtags'] = sampled_images_df['raw_caption'].apply(extract_hashtags)
 sampled_images_df['caption'] = sampled_images_df['raw_caption'].apply(clean_text)
 # sampled_images_df['hashtags'] = sampled_images_df['hashtags'].apply(fix_encoding)
@@ -159,26 +153,22 @@ sampled_images_df['caption'] = sampled_images_df['raw_caption'].apply(clean_text
 sampled_images_df['hashtags'] = sampled_images_df['hashtags'].replace('', 'NA')
 sampled_images_df['caption'] = sampled_images_df['caption'].replace('', 'NA')
 
-# Display the DataFrame
+#dataFrame
 sampled_images_df.head()
 
 #%%
-# Convert columns to integers
+#convert columns to integers
 sampled_images_df['like_count'] = sampled_images_df['like_count'].fillna(0).astype(int)
 sampled_images_df['comment_count'] = sampled_images_df['comment_count'].fillna(0).astype(int)
 # sampled_images_df['followers'] = sampled_images_df['followers'].fillna(0).astype(int)
 
 #%%
-# Convert timestamp to datetime
+#convert timestamp to datetime
 sampled_images_df.loc[:, 'timestamp'] = sampled_images_df['timestamp'].apply(lambda x: datetime.utcfromtimestamp(x).strftime('%Y-%m-%d %H:%M:%S'))
 
 #%%
-# Remove rows where followers == 999
-# sampled_images_df = sampled_images_df[sampled_images_df['followers'] != 999]
-
-#%%
 #SAMPLING
-# Filter the DataFrame to include only rows where the timestamp is earlier than '25/07/2024'
+#filter the DataFrame to include only rows where the timestamp is earlier than '25/07/2024'
 sampled_images_df = sampled_images_df[sampled_images_df['timestamp'] < '2024-08-10 00:00:00']
 sampled_images_df.shape
 
@@ -187,16 +177,15 @@ sampled_images_df.shape
 
 #creating engagement metric
 # sampled_images_df['eng_met'] = (sampled_images_df['like_count'] + (2 * sampled_images_df['comment_count'])).round(2)
-# Step 1: Calculate eng_met_raw as the sum of likes and comments
-sampled_images_df['eng_met'] = sampled_images_df['like_count'] + sampled_images_df['comment_count']
+#eng_met_raw calculation: sum of likes and comments
+sampled_images_df['eng_met_base'] = sampled_images_df['like_count'] + sampled_images_df['comment_count']
 
-# Step 2: Calculate min and max of eng_met_raw
-min_eng_met_raw = sampled_images_df['eng_met'].min()
-max_eng_met_raw = sampled_images_df['eng_met'].max()
+#min and max of eng_met_raw
+min_eng_met_raw = sampled_images_df['eng_met_base'].min()
+max_eng_met_raw = sampled_images_df['eng_met_base'].max()
 
-# Step 3: Apply min-max scaling to normalize eng_met_raw between 1 and 100
-sampled_images_df['eng_met_scaled'] = (sampled_images_df['eng_met'] - min_eng_met_raw) / (max_eng_met_raw - min_eng_met_raw) * (100 - 1) + 1
-
+#min-max scaling to normalize eng_met_raw between 1 and 100
+sampled_images_df['eng_met'] = (sampled_images_df['eng_met_base'] - min_eng_met_raw) / (max_eng_met_raw - min_eng_met_raw) * (100 - 1) + 1
 
 sampled_images_df.head()
 
@@ -210,8 +199,8 @@ sampled_images_df.shape
 # %%
 #--------------------------------------------------------------------------------------------------------------------------------
 #%%
-#Image recognition and aesthetics
-# Function to download an image from a URL
+#image recognition and aesthetics
+#function to download an image from a URL
 # def download_image(url):
 #     try:
 #         response = requests.get(url, timeout=5)
@@ -232,10 +221,10 @@ sampled_images_df.shape
 #         response = requests.get(image_url)
 #         response.raise_for_status()  # Check if the request was successful
         
-#         # Convert the response content to an image
+#         #convert the response content to an image
 #         image = Image.open(BytesIO(response.content))
         
-#         # Save the image to the specified directory
+#         #save the image to the specified directory
 #         image_path = os.path.join(save_directory, f"{image_name}.jpg")
 #         image.save(image_path)
         
@@ -245,7 +234,6 @@ sampled_images_df.shape
 #         print(f"Failed to download or save image: {e}")
 #         return None
 
-# # Example usage:
 # for idx, row in sampled_images_df.iterrows():
 #     shortcode = row['shortcode']
 #     image_url = row['display_url']
@@ -255,23 +243,11 @@ sampled_images_df.shape
 #         print(f"Successfully saved image {shortcode}")
 
 
-# Apply the download_image function to each URL in the 'display_url' column
+#download_image function to each URL in the 'display_url' column
 # sampled_images_df_copy['image'] = sampled_images_df['display_url'].apply(download_image)
 
 #%%
-# call images
-# def load_image(image_path):
-#     image = Image.open(image_path)
-#     # image = image.resize((224, 224))  
-#     image_array = np.array(image) 
-#     return image_array
-
-# # Example usage:
-# image_array = load_image("saved_images/example.jpg")
-# Now you can use `image_array` for prediction in your model
-
-#%%
-# Function to detect the language
+#function to detect the language
 def detect_language(text):
     try:
         lang, _ = langid.classify(text)
@@ -282,7 +258,7 @@ def detect_language(text):
 
 #%%
 #FUNCTIONS
-# Function to calculate sharpness
+#function to calculate sharpness
 def calculate_sharpness(image):
     image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
     gray = cv2.cvtColor(image_cv, cv2.COLOR_BGR2GRAY)
@@ -296,19 +272,19 @@ def calculate_sharpn(image):
     return sharpness
 
 
-# Function to calculate exposure
+#function to calculate exposure
 def calculate_exposure(image):
     gray_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
     exposure = np.mean(gray_image)
     return exposure
 
-# Function to calculate brilliance
+#function to calculate brilliance
 def calculate_brilliance(image):
     gray_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
     brilliance = np.std(gray_image)
     return brilliance
 #
-# Function to calculate colorfulness
+#function to calculate colorfulness
 def calculate_colorfulness(image):
     image = np.array(image)
     (B, G, R) = cv2.split(image.astype("float"))
@@ -321,14 +297,13 @@ def calculate_colorfulness(image):
     colorfulness = std_rg + std_yb + 0.3 * (mean_rg + mean_yb)
     return colorfulness
 
-#
-# Function to calculate highlights
+#function to calculate highlights
 def calculate_highlights(image, threshold=200):
     gray_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
     highlights = np.sum(gray_image > threshold)
     return highlights
 
-# Function to calculate vibrancy
+#function to calculate vibrancy
 def calculate_vibrancy(image):
     hsv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2HSV)
     saturation = hsv_image[:, :, 1]
@@ -336,54 +311,54 @@ def calculate_vibrancy(image):
     vibrancy = np.mean(saturation * brightness)
     return vibrancy
 
-# Function to calculate warmth
+#function to calculate warmth
 def calculate_warmth(image):
     hsv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2HSV)
     warmth = np.mean(hsv_image[:, :, 0])
     return warmth
 
-# Function to calculate tint
+#function to calculate tint
 def calculate_tint(image):
     lab_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2Lab)
     tint = np.mean(lab_image[:, :, 1] - lab_image[:, :, 2])
     return tint
 
-# Function to calculate definition
+#function to calculate definition
 def calculate_definition(image):
     gray_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
     edges = cv2.Canny(gray_image, 50, 150)
     definition = np.sum(edges)
     return definition
 
-# Function to calculate noise_reduction
+#function to calculate noise_reduction
 def calculate_noise_reduction(image):
     gray_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
     noise = np.std(gray_image)
     return noise
 
-# Function to calculate vignette
+#function to calculate vignette
 def calculate_vignette(image):
     gray_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
     
-    # Calculate the mean pixel values for each edge of the image
+    #mean pixel values for each edge of the image
     top_edge_mean = np.mean(gray_image[0, :])
     bottom_edge_mean = np.mean(gray_image[-1, :])
     left_edge_mean = np.mean(gray_image[:, 0])
     right_edge_mean = np.mean(gray_image[:, -1])
     
-    # Calculate the average of these means
+    #average of these means
     edge_mean = np.mean([top_edge_mean, bottom_edge_mean, left_edge_mean, right_edge_mean])
     
-    # Calculate the center value
+    #center value
     center_value = gray_image[gray_image.shape[0] // 2, gray_image.shape[1] // 2]
     
-    # Calculate vignette effect as the difference between center and edge mean values
+    #vignette effect: difference between center and edge mean values
     vignette = center_value - edge_mean
     
     return vignette
 
 
-# Function to calculate tone
+#function to calculate tone
 def calculate_tone(image):
     image_hsv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2HSV)
     hue = image_hsv[:, :, 0]
@@ -393,14 +368,14 @@ def calculate_tone(image):
     else:
         return "Warm"
 
-# Function to estimate depth 
+#function to estimate depth 
 def load_midas_model():
     midas = torch.hub.load("intel-isl/MiDaS", "MiDaS")
     midas.eval()
     return midas
 
 
-# Function to preprocess the image for MiDaS model
+#function to preprocess the image for MiDaS model
 def preprocess_midas(image):
     transform = transforms.Compose([
         transforms.ToTensor(),
@@ -430,26 +405,26 @@ def estimate_depth(image):
     return depth_map
 
 #
-# Function to calculate shadows
+#function to calculate shadows
 def calculate_shadows(image, threshold=50):
     gray_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
     shadows = np.sum(gray_image < threshold)
     return shadows
 
-# Function to calculate contrast
+#function to calculate contrast
 def calculate_contrast(image):
     gray_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
     contrast = np.max(gray_image) - np.min(gray_image)
     return contrast
 
-# Function to calculate black_point
+#function to calculate black_point
 def calculate_black_point(image):
     gray_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
     black_point = np.min(gray_image)
     return black_point
 
 #
-# # Placeholder function for garnishing detection (using pre-trained object detection model)
+# #function for garnishing detection
 # def detect_garnishing(image):
 #     model = fasterrcnn_resnet50_fpn(pretrained=True)
 #     model.eval()
@@ -466,30 +441,29 @@ def calculate_black_point(image):
 #     return garnishing_count
 
 #
-# Function to extract RGB values and calculate statistics
+#function to extract RGB values
 def extract_rgb_values(image):
     image_np = np.array(image)
     pixels = image_np.reshape((-1, 3))  # Reshape to a list of pixels
     
-    # Calculate mean RGB values
+    #mean RGB values
     mean_rgb = np.mean(pixels, axis=0)
     
-    # Calculate median RGB values
+    #median RGB values
     median_rgb = np.median(pixels, axis=0)
     
-    # Calculate HSV values
+    #HSV values
     image_hsv = cv2.cvtColor(image_np, cv2.COLOR_RGB2HSV)
     hue = np.mean(image_hsv[:, :, 0])
     saturation = np.mean(image_hsv[:, :, 1])
     brightness = np.mean(image_hsv[:, :, 2])
     
-    # Here I'm just assuming some dummy dominant color extraction, you might want to replace this 
-    # with a proper dominant color extraction method.
+    #5 dominant colors
     dominant_colors = KMeans(n_clusters=5).fit(pixels).cluster_centers_[:3]
     
     return mean_rgb, dominant_colors, hue, saturation, brightness
 
-# Function to evaluate symmetry
+#function to evaluate symmetry
 def evaluate_symmetry(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     flipped = cv2.flip(gray, 1)
@@ -497,7 +471,7 @@ def evaluate_symmetry(image):
     score = np.sum(difference)
     return score
 
-# Function to evaluate lines (horizontal, vertical, diagonal)
+#function to evaluate lines (horizontal, vertical, diagonal)
 def evaluate_lines(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray, 50, 150, apertureSize=3)
@@ -514,7 +488,7 @@ def evaluate_lines(image):
                 diagonal += 1
     return horizontal, vertical, diagonal
 
-# Function to evaluate triangles
+#function to evaluate triangles
 def evaluate_triangles(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray, 50, 150, apertureSize=3)
@@ -526,7 +500,7 @@ def evaluate_triangles(image):
             triangles += 1
     return triangles
 
-# Function to evaluate center composition
+#function to evaluate center composition
 def evaluate_center_composition(image):
     height, width, _ = image.shape
     center_x, center_y = width // 2, height // 2
@@ -537,15 +511,15 @@ def evaluate_center_composition(image):
 
 #%%
 #CALLING FUNCTIONS
-# List to store the results as dictionaries
+#list to store the results as dictionaries
 results_list = []
 
-# Process each image
+#process each image
 for idx, row in sampled_images_df.iterrows():
     shortcode = row['shortcode']
     caption = row['caption']
     # image_url = row['display_url']
-    # Load the saved image
+    #load the saved image
     image_path = os.path.join("/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/code/saved_images", f"{shortcode}.jpg")
     image = Image.open(image_path)
     # image = download_image(image_url)
@@ -569,20 +543,16 @@ for idx, row in sampled_images_df.iterrows():
         shadows = calculate_shadows(image)
         contrast = calculate_contrast(image)
         black_point = calculate_black_point(image)
-        #Convert PIL image to OpenCV format for composition evaluation
+        #PIL image to OpenCV format
         image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
         symmetry_score = evaluate_symmetry(image_cv)
         horizontal, vertical, diagonal = evaluate_lines(image_cv)
         triangle_count = evaluate_triangles(image_cv)
         center_score = evaluate_center_composition(image_cv)
-        
-        # Extract RGB values
         mean_rgb, dominant_colors, hue, saturation, brightness = extract_rgb_values(image)
-        
-        # Detect the language of the caption
         # caption_lang = detect_language(caption)
 
-        # Append results as dictionary to results_list
+        #append results 
         results_list.append({
             'shortcode': shortcode,
             'sharpness': sharpness,
@@ -619,31 +589,27 @@ for idx, row in sampled_images_df.iterrows():
         print(f"Skipping image {shortcode} due to download error.")
 
 #%%
-# Convert results_list to DataFrame
+#results_list to DataFrame
 results_df = pd.DataFrame(results_list)
 
-# Merge the results with the original dataset
+#merge the results with the original dataset
 final_df = pd.merge(sampled_images_df, results_df, on='shortcode')
 
 # %%
 final_df.head()
 
 #%%
-#separate the bracket cols into individual cols
+#function to split mean_rgb column
 def split_rgb_list(df, col_name):
-    # Split the RGB values into separate columns
+    #split the RGB values
     df[[f'{col_name}_r', f'{col_name}_g', f'{col_name}_b']] = pd.DataFrame(df[col_name].tolist(), index=df.index)
     return df
 
-# Apply function to split mean_rgb column
 final_df = split_rgb_list(final_df, 'mean_rgb')
-
-
-
-#%%
 
 # %%
 #--------------------------------------------------------------------------------------------------------------------------------
+
 #%%
 #preprocess the dominant_colors column to get color names
 def closest_color(requested_color):
@@ -658,23 +624,23 @@ def closest_color(requested_color):
 
 def get_color_name(rgb_tuple):
     try:
-        # Convert RGB to hex
+        #RGB to hex
         hex_value = webcolors.rgb_to_hex(rgb_tuple)
-        # Get the color name directly
+        #color name 
         return webcolors.hex_to_name(hex_value)
     except ValueError:
-        # If exact match not found, find the closest color
         return closest_color(rgb_tuple)
 
 def get_color_names_from_rgb_list(rgb_list):
     color_names = []
     for rgb in rgb_list:
         if isinstance(rgb, np.ndarray) and rgb.size == 3:
-            rgb = tuple(rgb.astype(int))  # Convert to tuple and ensure integer values
+            #int vals
+            rgb = tuple(rgb.astype(int))
         elif isinstance(rgb, list) or isinstance(rgb, tuple):
-            rgb = tuple(int(val) for val in rgb)  # Convert list/tuple values to integers
+            rgb = tuple(int(val) for val in rgb)
         else:
-            continue  # Skip if the RGB value is not valid
+            continue
         color_names.append(get_color_name(rgb))
     return color_names
 
@@ -703,16 +669,16 @@ final_df.head()
 #%%
 #ENGAGEMENT METRIC
 
-# # Convert timestamp to datetime
+# #convert timestamp to datetime
 # final_df['timestamp'] = pd.to_datetime(final_df['timestamp'])
 
 # #find the time since post
 # scrape_time = pd.to_datetime('2024-08-10 19:13:00')
 
-# # Calculate time since post in hours
+# #time since post in hours
 # final_df['time_since_post'] = ((scrape_time - final_df['timestamp']).dt.total_seconds() / 3600).round(2)
 
-# # Define the growth rate constant
+# #growth rate constant
 # # k = 2
 
 # # f(time since post)- exponential growth function
@@ -725,35 +691,21 @@ final_df.head()
 # # )).round(2)
 
 # #%%
-# # Drop cols
+# #drop cols
 # # final_df.drop(columns=['time_since_post', 'exp_growth'], inplace=True)
 # final_df.drop(columns=['time_since_post'], inplace=True)
 # final_df.head()
 
 #%%
 #%%
-# Combine line columns
+#combine line columns
 final_df['lines_count'] = final_df['lines_horizontal'] + final_df['lines_vertical'] + final_df['lines_diagonal']
-# Combine RGB columns
+#combine RGB columns
 final_df['mean_rgb'] = (final_df['mean_rgb_r'] + final_df['mean_rgb_g'] + final_df['mean_rgb_b']/3)
-# Drop the original columns
+#drop the original columns
 final_df.drop(columns=['lines_horizontal', 'lines_vertical', 'lines_diagonal','triangle_count', 'mean_rgb_r', 'mean_rgb_g', 'mean_rgb_b'], inplace=True)
 
 final_df.head()
-
-#%%
-# #DATA SAMPLING - bootstrap sampling
-# # Set the target number of rows
-# target_rows = 600
-
-# # Perform bootstrap sampling
-# final_df = final_df.sample(n=target_rows, replace=True, random_state=1)
-
-# # Save the new dataset to a CSV file
-# # bootstrap_sampled_data.to_csv('expanded_model_data.csv', index=False)
-
-# # Verify the shape of the new dataset
-# print("Shape of augmented dataset:", final_df.shape)
 
 # %%
 #saving as csv

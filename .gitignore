@@ -25,3 +25,7 @@ presentation:info/Lit review.pptx
 *.jpg
 code/saved_images
 *.pptx
+code/Engagement_metrics.py
+code/base_code.py
+presentation:info/Image Aesthetics and their effects on Engagement Metrics.docx
+code/env_math_mod.yml

@@ -30,7 +30,6 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Dense, Dropout
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 #metrics
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score

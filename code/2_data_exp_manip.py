@@ -20,32 +20,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-#standardization
-from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
-from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
-
-#splitting data
-from sklearn.model_selection import train_test_split
-
-#models
-import xgboost as xgb
-from sklearn.svm import SVR
-from sklearn.linear_model import LinearRegression
-from sklearn.neural_network import MLPRegressor
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.layers import Dense, Dropout
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-
-#metrics
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 #%%
 #reading data
@@ -84,6 +58,28 @@ cols_drop = ['node_comments_disabled', 'node_typename', 'node_id', 'raw_caption'
        'node_video_view_count', 'hashtags', 'caption','sharpn']
 
 food_df = food_df.drop(columns = cols_drop)
+
+
+#%%
+#let's explore our target variable
+# Histogram for eng_met
+plt.figure(figsize=(12, 6))
+
+plt.subplot(1, 2, 1)
+plt.hist(food_df['eng_met_base'], bins=30, color='blue', alpha=0.7)
+plt.title('Distribution of eng_met')
+plt.xlabel('eng_met')
+plt.ylabel('Frequency')
+
+# Histogram for eng_met_scaled
+plt.subplot(1, 2, 2)
+plt.hist(food_df['eng_met'], bins=30, color='green', alpha=0.7)
+plt.title('Distribution of eng_met_scaled')
+plt.xlabel('eng_met_scaled')
+plt.ylabel('Frequency')
+
+plt.tight_layout()
+plt.show()
 
 # %%
 #specific columns for correlation and prediciton

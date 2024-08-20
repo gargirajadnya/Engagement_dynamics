@@ -19,6 +19,7 @@ from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 
 #models
+from sklearn.model_selection import GridSearchCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
@@ -208,20 +209,29 @@ print("F1 Score:", round(f1_dt, 3))
 
 #%%
 #initialize Random Forest, train and make predictions 
-rf_classifier = RandomForestClassifier(n_estimators=100, random_state=42)
-rf_classifier.fit(X_train_pca, y_train)
-y_pred_rf = rf_classifier.predict(X_test_pca)
+param_grid_rf = {
+    'n_estimators': [100, 200, 300],
+    'max_depth': [None, 10, 20, 30]
+}
+
+rf_classifier = RandomForestClassifier(random_state=42)
+grid_search_rf = GridSearchCV(estimator=rf_classifier, param_grid=param_grid_rf, cv=5, scoring='f1_weighted', verbose=1, n_jobs=-1)
+grid_search_rf.fit(X_train_pca, y_train)
+best_params_rf = grid_search_rf.best_params_
+best_rf_classifier = grid_search_rf.best_estimator_
+y_pred_rf = best_rf_classifier.predict(X_test_pca)
 
 #evaluation metrics
 accuracy_rf = accuracy_score(y_test, y_pred_rf)
 f1_rf = f1_score(y_test, y_pred_rf, average='weighted')
 
 print('Random Forest results:')
+print('Best Hyperparameters for Random Forest:', best_params_rf)
 print("Accuracy:", round(accuracy_rf, 3))
 print("F1 Score:", round(f1_rf, 3))
 
 #%%
-#initialize the XGBoost model
+#initialize the XGBoost model, train and make predictions 
 xgb_model = xgb.XGBClassifier(objective='binary:logistic', eval_metric='logloss')
 xgb_model.fit(X_train_pca, y_train)
 y_pred_xgb = xgb_model.predict(X_test_pca)
@@ -244,30 +254,29 @@ image_dir = "/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeli
 def preprocess_images(shortcodes, image_dir, target_size):
     processed_images = []
     for shortcode in shortcodes:
-        # Construct the image path
+        #image path
         image_path = os.path.join(image_dir, f"{shortcode}.jpg")
 
-        # Load the image
+        #image
         image = Image.open(image_path)
 
-        # Resize the image
+        #resize the image
         image = image.resize(target_size)
 
-        # Convert the image to a numpy array and normalize pixel values to [0, 1]
+        #image to a numpy array and normalize pixel values to [0, 1]
         image_array = np.array(image) / 255.0  
 
-        # If the image has only one channel (e.g., grayscale), convert it to RGB
+        #single-channel (e.g., grayscale) images to RGB
         if image_array.ndim == 2:
             image_array = np.expand_dims(image_array, axis=-1)
-            image_array = np.concatenate([image_array] * 3, axis=-1)  # Convert to RGB
+            image_array = np.concatenate([image_array] * 3, axis=-1)
 
-        # Append the processed image to the list
+        #append the processed image to the list
         processed_images.append(image_array)
 
-    # Convert the list of images to a NumPy array
+    #list of images to a NumPy array
     return np.array(processed_images)
 
-# Example usage
 shortcodes = model_df_balanced['shortcode'].values
 image_arrays = preprocess_images(shortcodes, image_dir, target_size=(128, 128))
 
@@ -295,7 +304,7 @@ input_shape = (128, 128, 3)
 cnn_model = create_cnn_model(input_shape)
 cnn_model.summary()
 
-# Print layer names to identify the correct Flatten layer name
+#layer names to identify the correct Flatten layer name
 for layer in cnn_model.layers:
     print(f"Layer name: {layer.name}")
 
@@ -305,11 +314,11 @@ y = model_df_balanced['eng_met_bin'].values
 #split the data - training and testing
 X_train_images, X_test_images, y_train, y_test = train_test_split(image_arrays, y, test_size=0.2, random_state=42)
 
-# Ensure images are numpy arrays
+#images are numpy arrays
 X_train_images = np.array(X_train_images)
 X_test_images = np.array(X_test_images)
 
-# Train the CNN model
+#train model
 cnn_model.fit(X_train_images, y_train, epochs=10, batch_size=32, validation_split=0.2)
 
 #extract features using CNN
@@ -317,7 +326,7 @@ def extract_features_from_cnn(cnn_model, images):
     #create a model that ends with the last Flatten layer
     feature_extractor = Model(inputs=cnn_model.input, outputs=cnn_model.get_layer('flatten_layer').output)
     
-    # Print the shape of the intermediate features
+    #shape
     print("Feature Extractor Output Shape:", feature_extractor.output_shape)
     
     #extract features
@@ -346,6 +355,8 @@ X_test_combined = np.hstack((X_test_features, X_test_pca))
 mlp_model = MLPClassifier(hidden_layer_sizes=(128, 64), max_iter=500, random_state=42)
 mlp_model.fit(X_train_combined, y_train)
 y_pred_mlp = mlp_model.predict(X_test_combined)
+y_pred_prob_mlp = mlp_model.predict_proba(X_test_combined)[:, 1]
+
 
 #evaluation metrics
 accuracy_mlp = accuracy_score(y_test, y_pred_mlp)
@@ -354,13 +365,14 @@ f1_mlp = f1_score(y_test, y_pred_mlp, average='weighted')
 print('MLP model results:')
 print("Accuracy:", round(accuracy_mlp, 3))
 print("F1 Score:", round(f1_mlp, 3))
+
 # %%
 #----------------------------------------------------------------------------------------
 
 #%% 
 #plots
 #function to plot confusion matrix
-def plot_confusion_matrix(cm, classes, title='Confusion Matrix', cmap=plt.cm.Blues):
+def plot_confusion_matrix(cm, classes, title='Confusion Matrix', cmap=plt.cm.Greens):
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)
     plt.colorbar()
@@ -387,34 +399,29 @@ cm_xgb = confusion_matrix(y_test, y_pred_xgb)
 cm_mlp = confusion_matrix(y_test, y_pred_mlp)
 cm_rf = confusion_matrix(y_test, y_pred_rf)
 cm_dt = confusion_matrix(y_test, y_pred_dt)
+cm_lr = confusion_matrix(y_test, y_pred_lr)
+cm_svc = confusion_matrix(y_test, y_pred_svc)
 
-plt.figure(figsize=(15, 10))
+plt.figure(figsize=(18, 12), facecolor='#DAD7CD')
 
-plt.subplot(2, 2, 1)
+plt.subplot(2, 3, 1)
 plot_confusion_matrix(cm_xgb, classes=['No', 'Post'], title='Confusion Matrix - XGBoost')
 
-plt.subplot(2, 2, 2)
+plt.subplot(2, 3, 2)
 plot_confusion_matrix(cm_mlp, classes=['No', 'Post'], title='Confusion Matrix - MLP')
 
-plt.subplot(2, 2, 3)
+plt.subplot(2, 3, 3)
 plot_confusion_matrix(cm_rf, classes=['No', 'Post'], title='Confusion Matrix - Random Forest')
 
-plt.subplot(2, 2, 4)
+plt.subplot(2, 3, 4)
 plot_confusion_matrix(cm_dt, classes=['No', 'Post'], title='Confusion Matrix - Decision Tree')
 
 plt.show()
 
-# %%
-#confusion matrices for Logistic Regression and SVC
-cm_lr = confusion_matrix(y_test, y_pred_lr)
-cm_svc = confusion_matrix(y_test, y_pred_svc)
-
-plt.figure(figsize=(15, 7))
-
-plt.subplot(1, 2, 1)
+plt.subplot(2, 3, 5)
 plot_confusion_matrix(cm_lr, classes=['No', 'Post'], title='Confusion Matrix - Logistic Regression')
 
-plt.subplot(1, 2, 2)
+plt.subplot(2, 3, 6)
 plot_confusion_matrix(cm_svc, classes=['No', 'Post'], title='Confusion Matrix - SVC')
 
 plt.show()
@@ -422,6 +429,8 @@ plt.show()
 
 # %%
 #AUC-ROC Curve
+#probability predictions for the positive class (class 1)
+y_pred_prob_xgb = xgb_model.predict_proba(X_test_pca)[:, 1]
 fpr_xgb, tpr_xgb, _ = roc_curve(y_test, y_pred_prob_xgb)
 fpr_mlp, tpr_mlp, _ = roc_curve(y_test, y_pred_prob_mlp)
 
@@ -429,7 +438,7 @@ fpr_mlp, tpr_mlp, _ = roc_curve(y_test, y_pred_prob_mlp)
 auc_xgb = roc_auc_score(y_test, y_pred_prob_xgb)
 auc_mlp = roc_auc_score(y_test, y_pred_prob_mlp)
 
-plt.figure(figsize=(12, 8))
+plt.figure(figsize=(12, 8), facecolor='#DAD7CD')
 
 #XGBoost ROC curve
 plt.plot(fpr_xgb, tpr_xgb, color='darkgreen', linestyle='-', linewidth=2, marker='o', markersize=6, label=f'XGBoost (AUC = {auc_xgb:.3f})')
@@ -458,7 +467,7 @@ plt.show()
 #learning curve plots for MLP and Cnn
 #function to plot learning curve
 def plot_learning_curve(estimator, X, y, title="Learning Curves", cv=None, n_jobs=None, train_sizes=np.linspace(0.1, 1.0, 5)):
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(10, 6), facecolor='#DAD7CD')
     plt.title(title)
     plt.xlabel("Training examples")
     plt.ylabel("Score")

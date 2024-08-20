@@ -97,7 +97,7 @@ correlation_matrix = food_df[corr_cols].corr()
 mako_cmap = sns.color_palette("Greens", as_cmap=True)
 
 #heatmap of correlation
-plt.figure(figsize=(10, 8))
+plt.figure(figsize=(10, 8), facecolor='#DAD7CD')
 sns.heatmap(correlation_matrix, annot=True, cmap=mako_cmap)
 plt.title('Correlation Heatmap')
 plt.show()
@@ -109,14 +109,19 @@ plt.show()
 pred = ['dim_h', 'dim_w', 'brilliance', 'colorfulness', 'vibrancy', 'tint', 'definition', 'vignette', 'tone', 'depth', 'contrast', 'brightness', 'symmetry_score', 'center_score']
 target = 'eng_met'
 
+dark_green = "#2A3923" 
+plot_bg_color = "#DAD7CD"
+
 #initialize PairGrid
 g = sns.PairGrid(food_df, y_vars=[target], x_vars=pred, height=2.5, aspect=1.0)
 
 #map a scatterplot
-g.map(sns.scatterplot)
+g.map(sns.scatterplot, color=dark_green)
 
 #regression lines to the plots
-g.map(sns.regplot, scatter_kws={'alpha':0.5}, line_kws={'color':'red'}, ci=None)
+g.map(sns.regplot, scatter_kws={'color': dark_green, 'alpha': 0.5}, line_kws={'color': 'red'}, ci=None)
+
+plt.gcf().set_facecolor(plot_bg_color) 
 
 #titles
 for ax, col in zip(g.axes.flat, pred):

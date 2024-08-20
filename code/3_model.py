@@ -25,6 +25,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.neural_network import MLPRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.neural_network import MLPClassifier
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
@@ -32,7 +33,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Dense, Dropout
 
 #metrics
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, accuracy_score, f1_score, confusion_matrix, roc_curve, roc_auc_score
 
 #plots
 import seaborn as sns
@@ -796,3 +797,123 @@ for index, value in enumerate(metrics_df['RMSE']):
 plt.show()
 
 #%%
+
+#%%
+#function to load and preprocess images
+image_dir = "/Users/gargirajadnya/Documents/Academic/UCD/Trimester 3/Math Modeling/Engagement_dynamics/code/saved_images"
+
+def preprocess_images(shortcodes, image_dir, target_size):
+    processed_images = []
+    for shortcode in shortcodes:
+        # Construct the image path
+        image_path = os.path.join(image_dir, f"{shortcode}.jpg")
+
+        # Load the image
+        image = Image.open(image_path)
+
+        # Resize the image
+        image = image.resize(target_size)
+
+        # Convert the image to a numpy array and normalize pixel values to [0, 1]
+        image_array = np.array(image) / 255.0  
+
+        # If the image has only one channel (e.g., grayscale), convert it to RGB
+        if image_array.ndim == 2:
+            image_array = np.expand_dims(image_array, axis=-1)
+            image_array = np.concatenate([image_array] * 3, axis=-1)  # Convert to RGB
+
+        # Append the processed image to the list
+        processed_images.append(image_array)
+
+    # Convert the list of images to a NumPy array
+    return np.array(processed_images)
+
+# Example usage
+shortcodes = model_df_balanced['shortcode'].values
+image_arrays = preprocess_images(shortcodes, image_dir, target_size=(128, 128))
+
+
+#%%
+#CNN
+def create_cnn_model(input_shape):
+    model = Sequential([
+        Conv2D(32, (3, 3), activation='relu', input_shape=input_shape),
+        MaxPooling2D((2, 2)),
+        Conv2D(64, (3, 3), activation='relu'),
+        MaxPooling2D((2, 2)),
+        Conv2D(128, (3, 3), activation='relu'),
+        MaxPooling2D((2, 2)),
+        Flatten(name='flatten_layer'),
+        Dense(512, activation='relu'),
+        Dropout(0.5),
+        Dense(128, activation='relu'),
+        Dense(1, activation='sigmoid')
+    ])
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    return model
+
+input_shape = (128, 128, 3)
+cnn_model = create_cnn_model(input_shape)
+cnn_model.summary()
+
+# Print layer names to identify the correct Flatten layer name
+for layer in cnn_model.layers:
+    print(f"Layer name: {layer.name}")
+
+#split the df for labels
+y = model_df_balanced['eng_met_bin'].values
+
+#split the data - training and testing
+X_train_images, X_test_images, y_train, y_test = train_test_split(image_arrays, y, test_size=0.2, random_state=42)
+
+# Ensure images are numpy arrays
+X_train_images = np.array(X_train_images)
+X_test_images = np.array(X_test_images)
+
+# Train the CNN model
+cnn_model.fit(X_train_images, y_train, epochs=10, batch_size=32, validation_split=0.2)
+
+#extract features using CNN
+def extract_features_from_cnn(cnn_model, images):
+    #create a model that ends with the last Flatten layer
+    feature_extractor = Model(inputs=cnn_model.input, outputs=cnn_model.get_layer('flatten_layer').output)
+    
+    # Print the shape of the intermediate features
+    print("Feature Extractor Output Shape:", feature_extractor.output_shape)
+    
+    #extract features
+    features = feature_extractor.predict(images)
+    return features
+
+#features from CNN
+X_train_features = extract_features_from_cnn(cnn_model, X_train_images)
+X_test_features = extract_features_from_cnn(cnn_model, X_test_images)
+
+print(f"Extracted features shape: {X_train_features.shape}")
+
+
+#%%
+#standardize the features
+scaler = StandardScaler()
+X_train_features = scaler.fit_transform(X_train_features)
+X_test_features = scaler.transform(X_test_features)
+
+#combining numerical features and cnn output features
+X_train_combined = np.hstack((X_train_features, X_train_pca))
+X_test_combined = np.hstack((X_test_features, X_test_pca))
+
+#%%
+#initialize MLP model, train and make predictions
+mlp_model = MLPClassifier(hidden_layer_sizes=(128, 64), max_iter=500, random_state=42)
+mlp_model.fit(X_train_combined, y_train)
+y_pred_mlp = mlp_model.predict(X_test_combined)
+y_pred_prob_mlp = mlp_model.predict_proba(X_test_combined)[:, 1]
+
+
+#evaluation metrics
+accuracy_mlp = accuracy_score(y_test, y_pred_mlp)
+f1_mlp = f1_score(y_test, y_pred_mlp, average='weighted')
+
+print('MLP model results:')
+print("Accuracy:", round(accuracy_mlp, 3))
+print("F1 Score:", round(f1_mlp, 3))
